@@ -1,0 +1,623 @@
+/* === Reset & Base === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #1a1a2e;
+  --bg-surface: #16213e;
+  --bg-card: #1f2b47;
+  --bg-card-hover: #263352;
+  --accent: #e94560;
+  --accent-light: #ff6b81;
+  --text: #e0e0e0;
+  --text-muted: #8892a4;
+  --border: #2a3a5c;
+  --highlight: #0f3460;
+  --success: #4ecca3;
+  --warning: #f5a623;
+  --slot-empty: #1b2a4a;
+  --slot-filled: #243b65;
+  --suggestion-glow: rgba(233, 69, 96, 0.3);
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* === Header Controls Bar === */
+#controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-wrap: wrap;
+  min-height: 52px;
+}
+
+#controls-bar h1 {
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.controls-left, .controls-center, .controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.control-group label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+select, input[type="number"] {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+select:focus, input[type="number"]:focus {
+  border-color: var(--accent);
+}
+
+input[type="number"] { width: 65px; }
+
+button {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+button:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+button:active { transform: scale(0.97); }
+
+.transport-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.transport-controls button {
+  width: 34px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.toggle-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* === Main Layout === */
+#app-main {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  height: calc(100vh - 52px);
+  overflow: hidden;
+}
+
+/* === Chord Palette (Left) === */
+#chord-palette {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+#chord-palette h2 {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#palette-chords {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.palette-group-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.palette-chord {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: grab;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.palette-chord:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+.palette-chord.suggested {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--suggestion-glow);
+  background: rgba(233, 69, 96, 0.08);
+}
+
+#palette-suggestions-group {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.suggested-label {
+  color: var(--accent) !important;
+  font-weight: 600;
+  border-bottom-color: var(--accent) !important;
+}
+
+.chord-reason {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.palette-chord.dragging {
+  opacity: 0.5;
+}
+
+.palette-chord .chord-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.palette-chord .chord-numeral {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.palette-chord .mini-diagram {
+  width: 36px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.palette-chord .mini-diagram svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* === Song Timeline (Center) === */
+#song-timeline {
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.timeline-header h2 {
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#btn-add-section {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+#btn-add-section:hover {
+  background: var(--accent-light);
+}
+
+/* Sections */
+.timeline-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.section-header .section-name {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  width: 120px;
+}
+
+.section-header .section-name:hover,
+.section-header .section-name:focus {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.section-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.section-controls select {
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+
+.section-controls button {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+}
+
+.section-measures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+}
+
+/* Measure Slots */
+.measure-slot {
+  width: 110px;
+  min-height: 90px;
+  background: var(--slot-empty);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+
+.measure-slot.drag-over {
+  border-color: var(--accent);
+  background: rgba(233, 69, 96, 0.1);
+  box-shadow: 0 0 10px var(--suggestion-glow);
+}
+
+.measure-slot.filled {
+  background: var(--slot-filled);
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.measure-slot.playing {
+  border-color: var(--success);
+  box-shadow: 0 0 12px rgba(78, 204, 163, 0.4);
+}
+
+.measure-slot .slot-chord-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.measure-slot .slot-diagram {
+  width: 60px;
+  height: 55px;
+}
+
+.measure-slot .slot-diagram svg {
+  width: 100%;
+  height: 100%;
+}
+
+.measure-slot .slot-empty-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.measure-slot .slot-number {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.measure-slot .slot-remove {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.65rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 3px;
+  line-height: 1;
+  display: none;
+}
+
+.measure-slot.filled:hover .slot-remove {
+  display: block;
+}
+
+.measure-slot .slot-remove:hover {
+  color: var(--accent);
+}
+
+.measure-slot.has-tab {
+  width: 180px;
+  min-height: 150px;
+}
+
+/* Insert gap between measure slots */
+.insert-gap {
+  width: 6px;
+  min-height: 90px;
+  border-radius: 3px;
+  transition: width 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.insert-gap-active {
+  width: 16px;
+  background: rgba(233, 69, 96, 0.3);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+}
+
+.slot-tablature {
+  width: 166px;
+  height: 50px;
+  margin-top: 2px;
+  border-radius: 3px;
+}
+
+/* === Chord Detail Panel (Right) === */
+#chord-detail {
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+#chord-detail h2 {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+#detail-chord-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+  min-height: 1.6em;
+}
+
+#detail-diagram {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+#detail-diagram svg {
+  max-width: 220px;
+}
+
+#detail-voicings h3, #detail-suggestions h3 {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+#voicing-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.voicing-thumb {
+  width: 70px;
+  height: 75px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  padding: 4px;
+  transition: border-color 0.15s;
+}
+
+.voicing-thumb:hover, .voicing-thumb.active {
+  border-color: var(--accent);
+}
+
+.voicing-thumb svg {
+  width: 100%;
+  height: 100%;
+}
+
+.voicing-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+}
+
+#suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.suggestion-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.suggestion-chip:hover {
+  border-color: var(--accent);
+  background: var(--bg-card-hover);
+}
+
+.suggestion-chip .chip-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.suggestion-chip .chip-reason {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* === Scrollbar Styling === */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* === Modal / Dialog === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.modal h3 {
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+
+.modal input[type="text"] {
+  width: 100%;
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-actions .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* === Context Menu === */
+.context-menu {
+  position: fixed;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 0;
+  z-index: 999;
+  min-width: 140px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.context-menu-item {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.context-menu-item:hover {
+  background: var(--bg-card-hover);
+  color: var(--accent);
+}
