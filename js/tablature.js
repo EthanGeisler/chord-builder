@@ -15,7 +15,7 @@ const Tablature = (() => {
     { id: 5, label: 'A', type: 'string' },
     { id: 6, label: 'E', type: 'string' },
     { id: 'bass', label: 'Bass', type: 'special' },
-    { id: 'alt-bass', label: 'Alt', type: 'special' },
+    { id: 'alt-bass', label: 'Strum', type: 'special' },
   ];
 
   // Arpeggio patterns (legacy, kept for backward compat during migration)

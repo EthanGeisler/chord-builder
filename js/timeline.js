@@ -87,6 +87,26 @@ const Timeline = (() => {
         const row = rows[selectState.anchorRow];
         const col = selectState.anchorCol;
         const key = row.id + ':' + col;
+
+        // Strum row: toggle all 6 string rows for this column
+        if (row.id === 'alt-bass') {
+          const stringRows = rows.filter(r => r.type === 'string');
+          const anyActive = stringRows.some(r => section.gridState[r.id + ':' + col]);
+          const vel = (col % section.subdivisions === 0) ? 1.0 : 0.7;
+          stringRows.forEach(r => {
+            const k = r.id + ':' + col;
+            if (anyActive) {
+              delete section.gridState[k];
+            } else {
+              section.gridState[k] = vel;
+            }
+          });
+          clearSelection();
+          render();
+          App.emit('songChanged');
+          return;
+        }
+
         if (e.shiftKey && section.gridState[key]) {
           const v = section.gridState[key];
           if (v >= 0.9) section.gridState[key] = 0.7;
@@ -119,6 +139,7 @@ const Timeline = (() => {
       if (!e.target.closest('.timeline-section') && !e.target.closest('.context-menu')) {
         selectedSectionIdx = -1;
         document.querySelectorAll('.timeline-section').forEach(s => s.classList.remove('section-selected'));
+        hideSectionTheory();
       }
     });
   }
@@ -248,12 +269,13 @@ const Timeline = (() => {
     });
     repeatWrap.append(repeatLabel, repeatInput);
 
-    // Click to select section (for keyboard copy/paste)
+    // Click to select section (for keyboard copy/paste + theory panel)
     header.addEventListener('click', (e) => {
       if (e.target === nameInput) return;
       selectedSectionIdx = sIdx;
       document.querySelectorAll('.timeline-section').forEach(s => s.classList.remove('section-selected'));
       header.closest('.timeline-section').classList.add('section-selected');
+      renderSectionTheory(section);
     });
 
     // Right-click context menu on section
@@ -335,7 +357,7 @@ const Timeline = (() => {
       const col = Math.floor(x / COL_WIDTH_PX);
       const startBeat = Math.floor(col / section.subdivisions);
       const bpm = App.getBeatsPerMeasure();
-      const durationBeats = Math.min(bpm, section.totalBeats - startBeat);
+      const durationBeats = Math.min(1, section.totalBeats - startBeat);
 
       if (durationBeats <= 0) return;
 
@@ -353,6 +375,17 @@ const Timeline = (() => {
       render();
       App.emit('songChanged');
       App.emit('chordPlaced', { sIdx, chord: chordName });
+    });
+
+    // Right-click empty chord row space for paste
+    chordRow.addEventListener('contextmenu', (e) => {
+      if (e.target.closest('.chord-block')) return;
+      e.preventDefault();
+      const rect = chordRow.getBoundingClientRect();
+      const x = e.clientX - rect.left + (scrollArea ? scrollArea.scrollLeft : 0);
+      const col = Math.floor(x / COL_WIDTH_PX);
+      const startBeat = Math.floor(col / section.subdivisions);
+      showChordRowContextMenu(e.clientX, e.clientY, sIdx, startBeat);
     });
 
     scrollArea.appendChild(chordRow);
@@ -679,13 +712,14 @@ const Timeline = (() => {
     const beatDelta = colDelta / section.subdivisions;
 
     if (side === 'right') {
-      let newDuration = Math.max(1, origDurationBeats + beatDelta);
+      const minDuration = 1 / section.subdivisions;
+      let newDuration = Math.max(minDuration, origDurationBeats + beatDelta);
       newDuration = Math.round(newDuration * section.subdivisions) / section.subdivisions;
       newDuration = Math.min(newDuration, section.totalBeats - chord.startBeat);
       // Don't overlap next chord
       const nextChord = section.chords[cIdx + 1];
       if (nextChord) newDuration = Math.min(newDuration, nextChord.startBeat - chord.startBeat);
-      chord.durationBeats = Math.max(1, newDuration);
+      chord.durationBeats = Math.max(minDuration, newDuration);
     } else {
       // Left resize: move startBeat and adjust duration inversely
       let newStart = origStartBeat + beatDelta;
@@ -958,10 +992,10 @@ const Timeline = (() => {
       const x = e.clientX - rect.left + (scrollArea ? scrollArea.scrollLeft : 0);
       const col = Math.floor(x / COL_WIDTH_PX);
       const startBeat = Math.floor(col / section.subdivisions);
-      const durationBeats = Math.min(clipboard.durationBeats, section.totalBeats - startBeat);
+      const available = maxAvailableDuration(section.chords, startBeat, section.totalBeats - startBeat);
+      const durationBeats = Math.min(clipboard.durationBeats, available);
 
       if (durationBeats <= 0) { exitPasteMode(); return; }
-      if (hasOverlap(section.chords, startBeat, durationBeats, -1)) { exitPasteMode(); return; }
 
       // Place the chord
       section.chords.push({
@@ -1014,6 +1048,20 @@ const Timeline = (() => {
   // =============================================
   // Helpers
   // =============================================
+  function maxAvailableDuration(chords, startBeat, maxBeats) {
+    let available = maxBeats;
+    for (const c of chords) {
+      const cEnd = c.startBeat + c.durationBeats;
+      // If chord overlaps our start, no space
+      if (startBeat >= c.startBeat && startBeat < cEnd) return 0;
+      // If chord starts after us, clamp to its start
+      if (c.startBeat > startBeat) {
+        available = Math.min(available, c.startBeat - startBeat);
+      }
+    }
+    return available;
+  }
+
   function hasOverlap(chords, startBeat, durationBeats, excludeIdx) {
     const end = startBeat + durationBeats;
     return chords.some((c, i) => {
@@ -1356,6 +1404,59 @@ const Timeline = (() => {
     if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
   }
 
+  function showChordRowContextMenu(x, y, sIdx, startBeat) {
+    document.querySelectorAll('.context-menu').forEach(m => m.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'context-menu';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+
+    const section = App.state.sections[sIdx];
+
+    const pasteItem = document.createElement('div');
+    pasteItem.className = 'context-menu-item' + (!clipboard ? ' disabled' : '');
+    pasteItem.textContent = 'Paste Chord';
+    pasteItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!clipboard || !section) { menu.remove(); return; }
+
+      const available = maxAvailableDuration(section.chords, startBeat, section.totalBeats - startBeat);
+      const durationBeats = Math.min(clipboard.durationBeats, available);
+      if (durationBeats <= 0) { menu.remove(); return; }
+
+      section.chords.push({
+        chord: clipboard.chord,
+        voicingIndex: clipboard.voicingIndex,
+        startBeat,
+        durationBeats,
+      });
+      section.chords.sort((a, b) => a.startBeat - b.startBeat);
+
+      // Paste grid data
+      const destStartCol = startBeat * section.subdivisions;
+      const destNumCols = durationBeats * section.subdivisions;
+      for (const [offsetKey, vel] of Object.entries(clipboard.gridData)) {
+        const [rowId, offsetStr] = offsetKey.split(':');
+        const offset = parseInt(offsetStr, 10);
+        if (offset < destNumCols) {
+          section.gridState[rowId + ':' + (destStartCol + offset)] = vel;
+        }
+      }
+
+      menu.remove();
+      render();
+      App.emit('songChanged');
+    });
+    menu.appendChild(pasteItem);
+
+    document.body.appendChild(menu);
+
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
+    if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
+  }
+
   function showEmptyTimelineContextMenu(x, y) {
     document.querySelectorAll('.context-menu').forEach(m => m.remove());
 
@@ -1394,6 +1495,210 @@ const Timeline = (() => {
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 8) + 'px';
     if (rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 8) + 'px';
+  }
+
+  // =============================================
+  // Section theory panel (roman numerals + circle of fifths)
+  // =============================================
+  const CIRCLE_OF_FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F'];
+
+  function renderSectionTheory(section) {
+    const panel = document.getElementById('section-theory');
+    const numeralsDiv = document.getElementById('theory-numerals');
+    const circleDiv = document.getElementById('theory-circle');
+    if (!panel || !numeralsDiv || !circleDiv) return;
+
+    if (!section) {
+      panel.style.display = 'none';
+      return;
+    }
+
+    panel.style.display = '';
+    const key = App.state.key;
+    const mode = App.state.mode;
+
+    // Roman numeral analysis
+    numeralsDiv.innerHTML = '';
+    const analysisRow = document.createElement('div');
+    analysisRow.className = 'theory-numeral-row';
+
+    if (section.chords.length === 0) {
+      // Show diatonic chords as suggestions
+      const diatonic = Theory.getDiatonicChords(key, mode);
+      diatonic.forEach(ch => {
+        const item = document.createElement('div');
+        item.className = 'theory-numeral-item suggested';
+        item.innerHTML = `<span class="numeral-symbol">${ch.numeral}</span><span class="numeral-chord">${ch.triad}</span>`;
+        analysisRow.appendChild(item);
+      });
+      numeralsDiv.appendChild(analysisRow);
+
+      const usedChordNames = new Set();
+      renderCircleOfFifths(circleDiv, key, mode, usedChordNames, []);
+      return;
+    }
+
+    const usedRoots = new Set();
+
+    section.chords.forEach(c => {
+      const degree = Theory.findDegree(key, mode, c.chord);
+      const diatonic = Theory.getDiatonicChords(key, mode);
+      let numeral = '?';
+      if (degree) {
+        numeral = diatonic[degree - 1].numeral;
+        // Add quality suffixes for 7ths etc
+        const root = c.chord.replace(/(m7b5|maj7|m7|dim|aug|7|m|sus2|sus4|add9)$/, '');
+        const suffix = c.chord.slice(root.length);
+        if (suffix === '7' || suffix === 'maj7' || suffix === 'm7' || suffix === 'm7b5') {
+          numeral += suffix.replace('m7b5', 'ø7').replace('maj7', 'Δ7').replace('m7', '7').replace('7', '7');
+        }
+      }
+
+      const item = document.createElement('div');
+      item.className = 'theory-numeral-item' + (degree ? '' : ' non-diatonic');
+      item.innerHTML = `<span class="numeral-symbol">${numeral}</span><span class="numeral-chord">${c.chord}</span>`;
+      analysisRow.appendChild(item);
+
+      // Track roots for circle highlighting
+      const root = c.chord.replace(/(m7b5|maj7|m7|dim|aug|7|m|sus2|sus4|add9)$/, '');
+      usedRoots.add(root);
+    });
+
+    numeralsDiv.appendChild(analysisRow);
+
+    // Circle of fifths SVG
+    renderCircleOfFifths(circleDiv, key, mode, usedRoots, section.chords);
+  }
+
+  function renderCircleOfFifths(container, key, mode, usedRoots, chords) {
+    const size = 260;
+    const cx = size / 2;
+    const cy = size / 2;
+    const outerRadius = 108;
+    const innerRadius = 72;
+
+    // Relative minor is 3 semitones below each major (same position on circle)
+    const CIRCLE_MINORS = ['Am', 'Em', 'Bm', 'F#m', 'C#m', 'G#m', 'D#m', 'A#m', 'Fm', 'Cm', 'Gm', 'Dm'];
+
+    const scaleNotes = Theory.getScaleNotes(key, mode);
+
+    // Build set of used chord names (full, e.g. "Am", "C") for highlighting
+    const usedChordNames = new Set();
+    chords.forEach(c => usedChordNames.add(c.chord));
+
+    let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Draw rings
+    svg += `<circle cx="${cx}" cy="${cy}" r="${outerRadius}" fill="none" stroke="var(--border)" stroke-width="1.5"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${innerRadius}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
+
+    // Draw connecting lines between used chords in order
+    const chordPositions = [];
+    chords.forEach(c => {
+      // Strip extensions to get base chord, then check minor
+      const base = c.chord.replace(/(m7b5|maj7|m7|7|sus2|sus4|add9)$/, '');
+      const isMinor = base.endsWith('m') || base.endsWith('dim') || base.endsWith('aug');
+      const noteRoot = isMinor ? base.replace(/(m|dim|aug)$/, '') : base;
+      const idx = CIRCLE_OF_FIFTHS.indexOf(noteRoot);
+      if (idx >= 0) {
+        const r = isMinor ? innerRadius : outerRadius;
+        const angle = (idx * 30 - 90) * Math.PI / 180;
+        chordPositions.push({
+          x: cx + Math.cos(angle) * (r - 12),
+          y: cy + Math.sin(angle) * (r - 12),
+        });
+      }
+    });
+
+    if (chordPositions.length > 1) {
+      let pathD = `M ${chordPositions[0].x} ${chordPositions[0].y}`;
+      for (let i = 1; i < chordPositions.length; i++) {
+        pathD += ` L ${chordPositions[i].x} ${chordPositions[i].y}`;
+      }
+      svg += `<path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-opacity="0.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+      // Arrow on last segment
+      const last = chordPositions[chordPositions.length - 1];
+      const prev = chordPositions[chordPositions.length - 2];
+      const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+      const arrowLen = 8;
+      const a1x = last.x - arrowLen * Math.cos(angle - 0.4);
+      const a1y = last.y - arrowLen * Math.sin(angle - 0.4);
+      const a2x = last.x - arrowLen * Math.cos(angle + 0.4);
+      const a2y = last.y - arrowLen * Math.sin(angle + 0.4);
+      svg += `<polygon points="${last.x},${last.y} ${a1x},${a1y} ${a2x},${a2y}" fill="var(--accent)" opacity="0.7"/>`;
+    }
+
+    // Helper to style a node
+    function nodeStyle(note, isMinor) {
+      const chordName = isMinor ? note + 'm' : note;
+      const isInScale = scaleNotes.includes(note);
+      // Only highlight if this specific chord type (major or minor) is used
+      const isUsed = isMinor
+        ? usedChordNames.has(note + 'm') || usedChordNames.has(note + 'm7')
+        : usedChordNames.has(note) || usedChordNames.has(note + '7') || usedChordNames.has(note + 'maj7');
+      const isRoot = note === key;
+
+      const nodeR = isUsed ? 15 : (isInScale ? 12 : 9);
+      let fill = 'var(--bg-card)';
+      let stroke = 'var(--border)';
+      let textColor = 'var(--text-muted)';
+      let fontWeight = '400';
+      let fontSize = isMinor ? '9' : '11';
+
+      if (isRoot && ((mode === 'minor' && isMinor) || (mode !== 'minor' && !isMinor))) {
+        fill = 'var(--accent)';
+        stroke = 'var(--accent)';
+        textColor = '#fff';
+        fontWeight = '700';
+      } else if (isUsed) {
+        fill = 'rgba(233, 69, 96, 0.25)';
+        stroke = 'var(--accent)';
+        textColor = 'var(--text)';
+        fontWeight = '600';
+      } else if (isInScale) {
+        fill = 'var(--bg-surface)';
+        stroke = 'var(--text-muted)';
+        textColor = 'var(--text)';
+      }
+
+      return { nodeR, fill, stroke, textColor, fontWeight, fontSize };
+    }
+
+    // Outer ring: major chords
+    CIRCLE_OF_FIFTHS.forEach((note, i) => {
+      const angle = (i * 30 - 90) * Math.PI / 180;
+      const x = cx + Math.cos(angle) * outerRadius;
+      const y = cy + Math.sin(angle) * outerRadius;
+      const s = nodeStyle(note, false);
+
+      svg += `<circle cx="${x}" cy="${y}" r="${s.nodeR}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1.5"/>`;
+      svg += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="${s.textColor}" font-size="${s.fontSize}" font-weight="${s.fontWeight}" font-family="inherit">${note}</text>`;
+    });
+
+    // Inner ring: relative minor chords
+    CIRCLE_MINORS.forEach((minorChord, i) => {
+      const angle = (i * 30 - 90) * Math.PI / 180;
+      const x = cx + Math.cos(angle) * innerRadius;
+      const y = cy + Math.sin(angle) * innerRadius;
+      const note = minorChord.replace('m', '');
+      const s = nodeStyle(note, true);
+
+      svg += `<circle cx="${x}" cy="${y}" r="${s.nodeR}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1.5"/>`;
+      svg += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="${s.textColor}" font-size="${s.fontSize}" font-weight="${s.fontWeight}" font-family="inherit">${minorChord}</text>`;
+    });
+
+    // Center label
+    svg += `<text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-muted)" font-size="10" font-family="inherit">${key}</text>`;
+    svg += `<text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="inherit">${mode}</text>`;
+
+    svg += '</svg>';
+    container.innerHTML = svg;
+  }
+
+  function hideSectionTheory() {
+    const panel = document.getElementById('section-theory');
+    if (panel) panel.style.display = 'none';
   }
 
   // =============================================

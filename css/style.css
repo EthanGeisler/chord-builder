@@ -751,6 +751,66 @@ button:active { transform: scale(0.97); }
   max-width: 220px;
 }
 
+#section-theory h3 {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.theory-numeral-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.theory-numeral-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 40px;
+}
+
+.theory-numeral-item.non-diatonic {
+  border-color: var(--accent);
+  border-style: dashed;
+}
+
+.theory-numeral-item.suggested {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.numeral-symbol {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.numeral-chord {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+#theory-circle {
+  display: flex;
+  justify-content: center;
+}
+
+#theory-circle svg {
+  max-width: 100%;
+}
+
 #detail-voicings h3, #detail-suggestions h3 {
   font-size: 0.8rem;
   color: var(--text-muted);
