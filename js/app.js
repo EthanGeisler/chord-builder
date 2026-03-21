@@ -1,6 +1,9 @@
 // === Chord Builder — App State & Event Bus ===
 
 const App = (() => {
+  // Current data format version
+  const DATA_VERSION = 2;
+
   // Central state
   const state = {
     key: 'C',
@@ -9,14 +12,16 @@ const App = (() => {
     bpm: 120,
     timeSignature: '4/4',
     sections: [],
-    selectedSlot: null,     // { sectionIndex, measureIndex }
+    selectedSlot: null,     // { sectionIndex, chordIndex }
     selectedChord: null,    // chord name string
     selectedVoicingIndex: 0,
     isPlaying: false,
     isPaused: false,
     loopSection: false,
-    playbackPosition: { section: 0, measure: 0 },
+    playbackPosition: { section: 0, col: 0 },
     projectName: 'Untitled',
+    customVoicings: [],
+    customArpeggios: [],
   };
 
   // Event bus
@@ -46,27 +51,29 @@ const App = (() => {
   }
 
   function getMeasureDuration() {
-    // Duration of one measure in seconds
     const beats = getBeatsPerMeasure();
-    const beatUnit = parseInt(state.timeSignature.split('/')[1], 10);
-    // For 6/8, dotted quarter = beat, so 2 dotted-quarter beats
     if (state.timeSignature === '6/8') {
-      // 6/8 has 2 dotted-quarter beats per measure
-      const dottedQuarterDuration = 60 / state.bpm; // each dotted quarter
+      const dottedQuarterDuration = 60 / state.bpm;
       return dottedQuarterDuration * 2;
     }
-    // For x/4 time signatures
     return (beats * 60) / state.bpm;
   }
 
-  // Initialize default song structure
+  // Duration of a single beat in seconds
+  function getBeatDuration() {
+    return 60 / state.bpm;
+  }
+
+  // Initialize default song structure (v2 format)
   function initDefaultSong() {
     state.sections = [
       {
         name: 'Verse',
-        measures: Array.from({ length: 4 }, () => ({ chord: null, voicingIndex: 0 })),
+        totalBeats: 16,
+        subdivisions: 2,
+        chords: [],
+        gridState: {},
         dynamics: 'mf',
-        strumPattern: 'down-up',
       }
     ];
   }
@@ -74,6 +81,7 @@ const App = (() => {
   // Serialize state for save/export
   function serialize() {
     return JSON.stringify({
+      dataVersion: DATA_VERSION,
       key: state.key,
       mode: state.mode,
       capo: state.capo,
@@ -81,22 +89,102 @@ const App = (() => {
       timeSignature: state.timeSignature,
       sections: state.sections,
       projectName: state.projectName,
+      customVoicings: state.customVoicings,
+      customArpeggios: state.customArpeggios,
     });
+  }
+
+  // Migrate v1 data (measures-based) to v2 (chords + gridState)
+  function migrateV1ToV2(data) {
+    const beatsPerMeasure = data.timeSignature === '6/8' ? 6
+      : parseInt((data.timeSignature || '4/4').split('/')[0], 10);
+    const subdivisions = 2; // eighth notes
+
+    const newSections = (data.sections || []).map(section => {
+      const measures = section.measures || [];
+      const totalBeats = measures.length * beatsPerMeasure;
+      const chords = [];
+      const gridState = {};
+
+      measures.forEach((measure, mIdx) => {
+        if (measure.chord) {
+          const startBeat = mIdx * beatsPerMeasure;
+          chords.push({
+            chord: measure.chord,
+            voicingIndex: measure.voicingIndex || 0,
+            startBeat,
+            durationBeats: beatsPerMeasure,
+          });
+
+          // Stamp arpeggio pattern into grid if measure had one
+          const patternKey = measure.strumPattern || section.strumPattern;
+          if (patternKey && typeof Tablature !== 'undefined') {
+            const startCol = startBeat * subdivisions;
+            const numCols = beatsPerMeasure * subdivisions;
+            // Try stamp preset first, then legacy arpeggio
+            if (Tablature.STAMP_PRESETS && Tablature.STAMP_PRESETS[patternKey]) {
+              Tablature.stampPresetToGrid(patternKey, startCol, numCols, subdivisions, gridState);
+            } else if (Tablature.ARPEGGIO_PATTERNS && Tablature.ARPEGGIO_PATTERNS[patternKey]) {
+              // Convert legacy arpeggio pattern steps into grid cells
+              const pattern = Tablature.ARPEGGIO_PATTERNS[patternKey];
+              pattern.steps.forEach(step => {
+                const col = startCol + Math.round(step.beat * numCols);
+                if (col < startCol + numCols) {
+                  step.strings.forEach(s => {
+                    gridState[s + ':' + col] = step.vel || 0.7;
+                  });
+                }
+              });
+            }
+          }
+        }
+      });
+
+      return {
+        name: section.name || 'Section',
+        totalBeats: totalBeats || 16,
+        subdivisions,
+        chords,
+        gridState,
+        dynamics: section.dynamics || 'mf',
+      };
+    });
+
+    return newSections;
   }
 
   // Deserialize saved state
   function deserialize(json) {
     try {
       const data = JSON.parse(json);
+
+      // Detect version and migrate if needed
+      let sections = data.sections || [];
+      if (!data.dataVersion || data.dataVersion < 2) {
+        sections = migrateV1ToV2(data);
+      }
+
       Object.assign(state, {
         key: data.key || 'C',
         mode: data.mode || 'major',
         capo: data.capo || 0,
         bpm: data.bpm || 120,
         timeSignature: data.timeSignature || '4/4',
-        sections: data.sections || [],
+        sections,
         projectName: data.projectName || 'Untitled',
+        customVoicings: data.customVoicings || [],
+        customArpeggios: data.customArpeggios || [],
       });
+
+      // Re-register custom voicings with ChordsDB
+      if (typeof ChordsDB !== 'undefined' && ChordsDB.loadCustomVoicings) {
+        ChordsDB.loadCustomVoicings(state.customVoicings);
+      }
+      // Re-register custom arpeggios with Tablature
+      if (typeof Tablature !== 'undefined' && Tablature.loadCustomArpeggios) {
+        Tablature.loadCustomArpeggios(state.customArpeggios);
+      }
+
       state.selectedSlot = null;
       state.selectedChord = null;
       state.selectedVoicingIndex = 0;
@@ -108,5 +196,10 @@ const App = (() => {
     }
   }
 
-  return { state, on, off, emit, getBeatsPerMeasure, getMeasureDuration, initDefaultSong, serialize, deserialize };
+  return {
+    state, on, off, emit,
+    getBeatsPerMeasure, getMeasureDuration, getBeatDuration,
+    initDefaultSong, serialize, deserialize,
+    DATA_VERSION,
+  };
 })();

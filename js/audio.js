@@ -2,7 +2,6 @@
 
 const AudioEngine = (() => {
   let synth = null;
-  let playbackInterval = null;
   let toneStarted = false;
 
   const DYNAMICS_VELOCITY = {
@@ -12,62 +11,6 @@ const AudioEngine = (() => {
     'mf': 0.6,
     'f':  0.8,
     'ff': 1.0,
-  };
-
-  // Strum patterns: arrays of { beat, direction, velocity_mult }
-  // Beat is fraction of measure (0-1)
-  const STRUM_PATTERNS = {
-    'all-down': (beats) => {
-      const hits = [];
-      for (let i = 0; i < beats; i++) {
-        hits.push({ beat: i / beats, dir: 'down', vel: 1.0 });
-      }
-      return hits;
-    },
-    'down-up': (beats) => {
-      const hits = [];
-      for (let i = 0; i < beats; i++) {
-        hits.push({ beat: i / beats, dir: 'down', vel: 1.0 });
-        hits.push({ beat: (i + 0.5) / beats, dir: 'up', vel: 0.7 });
-      }
-      return hits;
-    },
-    'folk': (beats) => {
-      const hits = [];
-      for (let i = 0; i < beats; i++) {
-        hits.push({ beat: i / beats, dir: i === 0 ? 'bass' : 'up', vel: i === 0 ? 1.0 : 0.6 });
-      }
-      return hits;
-    },
-    'pop': (beats) => {
-      // D - DU-UDU pattern
-      const pattern = [
-        { beat: 0, dir: 'down', vel: 1.0 },
-        { beat: 0.25, dir: 'down', vel: 0.8 },
-        { beat: 0.375, dir: 'up', vel: 0.6 },
-        { beat: 0.625, dir: 'up', vel: 0.6 },
-        { beat: 0.75, dir: 'down', vel: 0.8 },
-        { beat: 0.875, dir: 'up', vel: 0.6 },
-      ];
-      return pattern;
-    },
-    'reggae': (beats) => {
-      const hits = [];
-      for (let i = 0; i < beats; i++) {
-        hits.push({ beat: (i + 0.5) / beats, dir: 'up', vel: 0.8 });
-      }
-      return hits;
-    },
-    'arpeggio': (beats) => {
-      const hits = [];
-      const notesPerBeat = 4;
-      for (let i = 0; i < beats; i++) {
-        for (let n = 0; n < notesPerBeat; n++) {
-          hits.push({ beat: (i + n / notesPerBeat) / beats, dir: 'arp', vel: 0.7, noteIndex: n });
-        }
-      }
-      return hits;
-    },
   };
 
   async function ensureToneStarted() {
@@ -99,14 +42,39 @@ const AudioEngine = (() => {
 
   // Convert chord name to playable notes with octaves
   function chordToNotes(chordName) {
-    const noteNames = Theory.getChordNotes(chordName);
-    if (!noteNames || noteNames.length === 0) return [];
+    if (chordName && chordName.startsWith('custom:')) {
+      return customChordToNotes(chordName);
+    }
 
-    // Assign octaves — root at octave 3, stack upward
+    const noteNames = Theory.getChordNotes(chordName);
+    if (!noteNames || noteNames.length === 0) {
+      const custom = App.state.customVoicings.find(cv => cv.name === chordName);
+      if (custom && custom.voicing) {
+        return notesFromVoicing(custom.voicing);
+      }
+      return [];
+    }
+
     return noteNames.map((note, i) => {
       const octave = i === 0 ? 3 : (i < 3 ? 4 : 5);
       return note + octave;
     });
+  }
+
+  function customChordToNotes(chordName) {
+    const custom = App.state.customVoicings.find(cv => cv.name === chordName);
+    if (!custom || !custom.voicing) return [];
+    return notesFromVoicing(custom.voicing);
+  }
+
+  function notesFromVoicing(voicing) {
+    const notes = [];
+    const capo = App.state.capo || 0;
+    for (let stringNum = 6; stringNum >= 1; stringNum--) {
+      const note = Tablature.stringToNote(stringNum, voicing, capo);
+      if (note) notes.push(note);
+    }
+    return notes;
   }
 
   // Play a single chord (click preview)
@@ -118,17 +86,17 @@ const AudioEngine = (() => {
     const notes = chordToNotes(chordName);
     if (notes.length === 0) return;
 
-    // Stagger notes slightly for strum feel
     const now = Tone.now();
     notes.forEach((note, i) => {
       s.triggerAttackRelease(note, '4n', now + i * 0.02, velocity);
     });
   }
 
-  // Full song playback
+  // === Grid-based playback ===
   let playbackState = {
     sectionIdx: 0,
-    measureIdx: 0,
+    currentCol: 0,
+    repeatIteration: 0,
     timer: null,
     stopped: false,
   };
@@ -137,20 +105,27 @@ const AudioEngine = (() => {
     await ensureToneStarted();
 
     if (App.state.isPaused) {
-      // Resume from paused position
       App.state.isPaused = false;
       App.state.isPlaying = true;
-      scheduleNextMeasure();
+      scheduleNextColumn();
       return;
     }
 
     App.state.isPlaying = true;
     App.state.isPaused = false;
-    playbackState.sectionIdx = App.state.playbackPosition.section;
-    playbackState.measureIdx = App.state.playbackPosition.measure;
+
+    // If a section is selected in the timeline, start from it
+    if (typeof Timeline !== 'undefined' && Timeline.getSelectedSectionIdx && Timeline.getSelectedSectionIdx() >= 0) {
+      playbackState.sectionIdx = Timeline.getSelectedSectionIdx();
+      playbackState.currentCol = 0;
+    } else {
+      playbackState.sectionIdx = App.state.playbackPosition.section;
+      playbackState.currentCol = App.state.playbackPosition.col;
+    }
+    playbackState.repeatIteration = 0;
     playbackState.stopped = false;
 
-    playCurrentMeasure();
+    playCurrentColumn();
   }
 
   function pause() {
@@ -171,124 +146,122 @@ const AudioEngine = (() => {
       playbackState.timer = null;
     }
     playbackState.sectionIdx = 0;
-    playbackState.measureIdx = 0;
-    App.state.playbackPosition = { section: 0, measure: 0 };
-    Timeline.setPlayingMeasure(-1, -1);
+    playbackState.currentCol = 0;
+    playbackState.repeatIteration = 0;
+    App.state.playbackPosition = { section: 0, col: 0 };
+    Timeline.setPlayingColumn(-1, -1);
 
-    // Release all notes
     const s = getSynth();
     if (s) s.releaseAll();
   }
 
-  function playCurrentMeasure() {
+  // Find which chord is active at a given column
+  function findChordAtCol(section, col) {
+    const beat = col / section.subdivisions;
+    for (let i = section.chords.length - 1; i >= 0; i--) {
+      const chord = section.chords[i];
+      if (beat >= chord.startBeat && beat < chord.startBeat + chord.durationBeats) {
+        return chord;
+      }
+    }
+    return null;
+  }
+
+  function playCurrentColumn() {
     if (playbackState.stopped || App.state.isPaused) return;
 
     const sections = App.state.sections;
     if (playbackState.sectionIdx >= sections.length) {
-      // Song ended
       stop();
       return;
     }
 
     const section = sections[playbackState.sectionIdx];
-    if (playbackState.measureIdx >= section.measures.length) {
+    const totalCols = section.totalBeats * section.subdivisions;
+
+    if (playbackState.currentCol >= totalCols) {
       // Section ended
       if (App.state.loopSection) {
-        playbackState.measureIdx = 0;
+        playbackState.currentCol = 0;
       } else {
-        playbackState.sectionIdx++;
-        playbackState.measureIdx = 0;
-        if (playbackState.sectionIdx >= sections.length) {
-          stop();
-          return;
+        const repeatTotal = section.repeat || 1;
+        playbackState.repeatIteration++;
+        if (playbackState.repeatIteration < repeatTotal) {
+          // Repeat this section
+          playbackState.currentCol = 0;
+        } else {
+          // Move to next section
+          playbackState.sectionIdx++;
+          playbackState.currentCol = 0;
+          playbackState.repeatIteration = 0;
+          if (playbackState.sectionIdx >= sections.length) {
+            stop();
+            return;
+          }
         }
       }
     }
 
     const currentSection = sections[playbackState.sectionIdx];
-    const measure = currentSection.measures[playbackState.measureIdx];
+    const col = playbackState.currentCol;
 
     // Update visual
-    Timeline.setPlayingMeasure(playbackState.sectionIdx, playbackState.measureIdx);
+    Timeline.setPlayingColumn(playbackState.sectionIdx, col);
     App.state.playbackPosition = {
       section: playbackState.sectionIdx,
-      measure: playbackState.measureIdx,
+      col,
     };
 
-    // Play chord if present
-    if (measure && measure.chord) {
-      const velocity = DYNAMICS_VELOCITY[currentSection.dynamics] || 0.6;
-      const pattern = currentSection.strumPattern || 'down-up';
-      const voicings = ChordsDB.getVoicings(measure.chord, App.state.capo);
-      const voicing = voicings && voicings[measure.voicingIndex || 0] || (voicings && voicings[0]);
-      playMeasureWithPattern(measure.chord, pattern, velocity, voicing);
-    }
-
-    // Schedule next measure
-    scheduleNextMeasure();
-  }
-
-  function scheduleNextMeasure() {
-    const duration = App.getMeasureDuration() * 1000; // ms
-    playbackState.timer = setTimeout(() => {
-      playbackState.measureIdx++;
-      playCurrentMeasure();
-    }, duration);
-  }
-
-  function playMeasureWithPattern(chordName, pattern, velocity, voicing) {
+    // Play notes for this column from gridState
     const s = getSynth();
-    if (!s) return;
+    if (s) {
+      const velocity = DYNAMICS_VELOCITY[currentSection.dynamics] || 0.6;
+      const activeChord = findChordAtCol(currentSection, col);
 
-    const measureDuration = App.getMeasureDuration();
-    const now = Tone.now();
+      if (activeChord) {
+        const voicings = ChordsDB.getVoicings(activeChord.chord, App.state.capo);
+        const voicing = voicings && voicings[activeChord.voicingIndex || 0] || (voicings && voicings[0]);
 
-    // Check if this is a string-based arpeggio pattern
-    const arpPattern = typeof Tablature !== 'undefined' && Tablature.ARPEGGIO_PATTERNS[pattern];
-    if (arpPattern && voicing) {
-      const capo = App.state.capo || 0;
-      arpPattern.steps.forEach(step => {
-        const time = now + step.beat * measureDuration;
-        const vel = velocity * step.vel;
-        const resolvedStrings = Tablature.resolveStrings(step.strings, voicing);
+        if (voicing) {
+          const capo = App.state.capo || 0;
+          const now = Tone.now();
+          let strumOffset = 0;
 
-        resolvedStrings.forEach(stringNum => {
-          const note = Tablature.stringToNote(stringNum, voicing, capo);
-          if (note) {
-            s.triggerAttackRelease(note, '8n', time, vel);
-          }
-        });
-      });
-      return;
+          // Check each grid row for this column
+          Tablature.GRID_ROWS.forEach(row => {
+            const key = row.id + ':' + col;
+            const cellVel = currentSection.gridState[key];
+            if (!cellVel) return;
+
+            const resolvedStrings = Tablature.resolveStrings([row.id], voicing);
+            resolvedStrings.forEach(stringNum => {
+              const note = Tablature.stringToNote(stringNum, voicing, capo);
+              if (note) {
+                s.triggerAttackRelease(note, '8n', now + strumOffset, velocity * cellVel);
+                strumOffset += 0.008; // slight stagger for natural sound
+              }
+            });
+          });
+        }
+      }
     }
 
-    // Fallback to existing strum pattern logic
-    const notes = chordToNotes(chordName);
-    if (notes.length === 0) return;
+    scheduleNextColumn();
+  }
 
-    const beats = App.getBeatsPerMeasure();
-    const patternFn = STRUM_PATTERNS[pattern] || STRUM_PATTERNS['down-up'];
-    const hits = patternFn(beats);
+  function scheduleNextColumn() {
+    const sections = App.state.sections;
+    const section = sections[playbackState.sectionIdx];
+    if (!section) return;
 
-    hits.forEach(hit => {
-      const time = now + hit.beat * measureDuration;
-      const vel = velocity * hit.vel;
+    // Duration of one column in ms
+    const beatDuration = App.getBeatDuration();
+    const colDuration = (beatDuration / section.subdivisions) * 1000;
 
-      if (hit.dir === 'arp' && hit.noteIndex !== undefined) {
-        // Arpeggio — play individual notes
-        const noteIdx = hit.noteIndex % notes.length;
-        s.triggerAttackRelease(notes[noteIdx], '8n', time, vel);
-      } else if (hit.dir === 'bass') {
-        // Bass note only
-        s.triggerAttackRelease(notes[0], '4n', time, vel);
-      } else {
-        // Full chord strum
-        const strumNotes = hit.dir === 'up' ? [...notes].reverse() : notes;
-        strumNotes.forEach((note, i) => {
-          s.triggerAttackRelease(note, '8n', time + i * 0.015, vel);
-        });
-      }
-    });
+    playbackState.timer = setTimeout(() => {
+      playbackState.currentCol++;
+      playCurrentColumn();
+    }, colDuration);
   }
 
   function init() {
@@ -303,7 +276,7 @@ const AudioEngine = (() => {
     });
   }
 
-  return { init, playChord, play, pause, stop };
+  return { init, playChord, play, pause, stop, findChordAtCol };
 })();
 
 // Alias for use in controls.js

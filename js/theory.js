@@ -183,6 +183,45 @@ const Theory = (() => {
     return semitones.map(s => KEYS[(rootIdx + s) % 12]);
   }
 
+  // Detect chord name from fretboard positions
+  // positions: array of 6 fret values (index 0=low E, -1=muted, 0=open)
+  // capo: capo fret position
+  // Returns array of candidate chord names (first = best), or empty if unknown
+  function detectChordFromPositions(positions, capo) {
+    if (!positions || positions.length !== 6) return [];
+
+    // Build a temporary voicing to use Tablature.stringToNote
+    const tempVoicing = { positions, baseFret: 1 };
+    const pitchClasses = new Set();
+
+    for (let stringNum = 1; stringNum <= 6; stringNum++) {
+      const note = Tablature.stringToNote(stringNum, tempVoicing, capo || 0);
+      if (note) {
+        // Strip octave to get pitch class (e.g., "C#3" → "C#")
+        const pc = note.replace(/\d+$/, '');
+        pitchClasses.add(pc);
+      }
+    }
+
+    if (pitchClasses.size === 0) return [];
+
+    const pcArray = Array.from(pitchClasses);
+
+    // Try Tonal.js chord detection
+    try {
+      if (typeof Tonal !== 'undefined' && Tonal.Chord && Tonal.Chord.detect) {
+        const candidates = Tonal.Chord.detect(pcArray);
+        if (candidates && candidates.length > 0) {
+          return candidates;
+        }
+      }
+    } catch (e) {
+      // fallback below
+    }
+
+    return [];
+  }
+
   return {
     KEYS,
     MODES,
@@ -191,5 +230,6 @@ const Theory = (() => {
     suggestNextChords,
     findDegree,
     getChordNotes,
+    detectChordFromPositions,
   };
 })();

@@ -2,6 +2,8 @@
 
 const ChordsDB = (() => {
   let voicingsData = {};
+  // Custom voicings: { id: { id, name, voicing } }
+  let customVoicingsMap = {};
 
   // Load voicings from JSON file
   async function load() {
@@ -18,11 +20,13 @@ const ChordsDB = (() => {
   // Look up voicings for a chord name
   // Returns array of voicing objects, or empty array
   function getVoicings(chordName, capo = 0) {
+    const custom = getCustomVoicingsFor(chordName);
+
     // Direct lookup
     let voicings = voicingsData[chordName];
     if (voicings && voicings.length > 0) {
-      if (capo > 0) return adjustForCapo(voicings, capo);
-      return voicings;
+      const base = capo > 0 ? adjustForCapo(voicings, capo) : voicings;
+      return base.concat(custom);
     }
 
     // Try normalizing: Tonal uses different naming sometimes
@@ -30,14 +34,20 @@ const ChordsDB = (() => {
     for (const alias of aliases) {
       voicings = voicingsData[alias];
       if (voicings && voicings.length > 0) {
-        if (capo > 0) return adjustForCapo(voicings, capo);
-        return voicings;
+        const base = capo > 0 ? adjustForCapo(voicings, capo) : voicings;
+        return base.concat(custom);
       }
     }
 
     // Generate barre chord from shape templates if no voicing found
     const generated = generateBarreVoicing(chordName);
-    if (generated) return capo > 0 ? adjustForCapo([generated], capo) : [generated];
+    if (generated) {
+      const base = capo > 0 ? adjustForCapo([generated], capo) : [generated];
+      return base.concat(custom);
+    }
+
+    // Even with no DB/barre match, return any custom voicings
+    if (custom.length > 0) return custom;
 
     return [];
   }
@@ -143,5 +153,35 @@ const ChordsDB = (() => {
     'Dm': [{ positions: [-1, -1, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1], barres: [], baseFret: 1, label: 'Open Dm' }],
   };
 
-  return { load, getVoicings, getDefaultVoicing };
+  // Get custom voicings matching a chord name
+  function getCustomVoicingsFor(chordName) {
+    const results = [];
+    for (const entry of Object.values(customVoicingsMap)) {
+      if (entry.name === chordName) {
+        results.push(entry.voicing);
+      }
+    }
+    return results;
+  }
+
+  // Register a single custom voicing
+  function registerCustomVoicing(id, name, voicing) {
+    customVoicingsMap[id] = { id, name, voicing };
+  }
+
+  // Remove a custom voicing by id
+  function removeCustomVoicing(id) {
+    delete customVoicingsMap[id];
+  }
+
+  // Bulk register custom voicings (called on deserialize)
+  function loadCustomVoicings(arr) {
+    customVoicingsMap = {};
+    if (!arr) return;
+    arr.forEach(cv => {
+      customVoicingsMap[cv.id] = { id: cv.id, name: cv.name, voicing: cv.voicing };
+    });
+  }
+
+  return { load, getVoicings, getDefaultVoicing, registerCustomVoicing, removeCustomVoicing, loadCustomVoicings };
 })();

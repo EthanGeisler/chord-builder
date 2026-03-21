@@ -17,14 +17,17 @@ const Controls = (() => {
       document.getElementById('bpm-input').value = App.state.bpm;
       document.getElementById('time-sig-select').value = App.state.timeSignature;
       renderPalette();
+      renderCustomVoicings();
     });
+
+    App.on('customVoicingAdded', () => renderCustomVoicings());
+    App.on('customVoicingRemoved', () => renderCustomVoicings());
 
     App.on('slotSelected', (data) => {
       updateSuggestions(data.chord);
     });
 
     App.on('chordPlaced', (data) => {
-      // After placing a chord, show suggestions for next
       updateSuggestions(data.chord);
     });
 
@@ -79,7 +82,6 @@ const Controls = (() => {
     sel.addEventListener('change', () => {
       App.state.capo = parseInt(sel.value, 10);
       renderPalette();
-      // Re-render chord detail if one is shown
       if (App.state.selectedChord) {
         showChordDetail(App.state.selectedChord);
       }
@@ -110,23 +112,75 @@ const Controls = (() => {
     });
   }
 
+  // Track which note groups are collapsed
+  const collapsedGroups = new Set();
+
   function renderPalette() {
     const container = document.getElementById('palette-chords');
     container.innerHTML = '';
 
     const diatonic = Theory.getDiatonicChords(App.state.key, App.state.mode);
 
+    // Build a lookup of diatonic roots for numeral display
+    const diatonicMap = {};
     diatonic.forEach(chord => {
-      // Group label
-      const groupLabel = document.createElement('div');
-      groupLabel.className = 'palette-group-label';
-      groupLabel.textContent = `${chord.numeral} — ${chord.root}`;
-      container.appendChild(groupLabel);
+      chord.variants.forEach(v => { diatonicMap[v] = chord.numeral; });
+    });
 
-      // Each variant
-      chord.variants.forEach(variant => {
+    // Group all 12 chromatic roots with common chord types
+    const noteOrder = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const groups = {};
+
+    noteOrder.forEach(root => {
+      // Standard chord variants for every root
+      const variants = [
+        root, root + 'm', root + '7', root + 'maj7', root + 'm7',
+        root + 'sus2', root + 'sus4', root + 'add9', root + 'dim', root + 'aug',
+      ];
+      groups[root] = variants.map(variant => ({
+        variant,
+        numeral: diatonicMap[variant] || '',
+        isDiatonic: !!diatonicMap[variant],
+      }));
+    });
+
+    // Determine which roots are diatonic (have at least one diatonic chord)
+    const diatonicRoots = new Set(diatonic.map(c => c.root));
+
+    noteOrder.forEach(letter => {
+      if (!groups[letter] || groups[letter].length === 0) return;
+
+      const isDiatonicRoot = diatonicRoots.has(letter);
+
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'palette-group';
+      if (!isDiatonicRoot) groupDiv.classList.add('non-diatonic');
+      // All groups start collapsed unless user explicitly opened them
+      const isCollapsed = !collapsedGroups.has('_opened_' + letter);
+      if (isCollapsed) groupDiv.classList.add('collapsed');
+
+      const toggle = document.createElement('button');
+      toggle.className = 'palette-group-toggle';
+      toggle.innerHTML = `<span>${letter}</span><span class="toggle-arrow">\u25BC</span>`;
+      toggle.addEventListener('click', () => {
+        const wasCollapsed = groupDiv.classList.contains('collapsed');
+        if (wasCollapsed) {
+          collapsedGroups.delete(letter);
+          if (!isDiatonicRoot) collapsedGroups.add('_opened_' + letter);
+        } else {
+          collapsedGroups.add(letter);
+          collapsedGroups.delete('_opened_' + letter);
+        }
+        groupDiv.classList.toggle('collapsed');
+      });
+      groupDiv.appendChild(toggle);
+
+      const contents = document.createElement('div');
+      contents.className = 'palette-group-contents';
+
+      groups[letter].forEach(({ variant, numeral, isDiatonic }) => {
         const el = document.createElement('div');
-        el.className = 'palette-chord';
+        el.className = 'palette-chord' + (isDiatonic ? ' diatonic' : '');
         el.draggable = true;
         el.dataset.chord = variant;
 
@@ -136,11 +190,10 @@ const Controls = (() => {
 
         const numeralSpan = document.createElement('span');
         numeralSpan.className = 'chord-numeral';
-        numeralSpan.textContent = chord.numeral;
+        numeralSpan.textContent = numeral;
 
         el.append(nameSpan, numeralSpan);
 
-        // Drag start
         el.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/plain', variant);
           el.classList.add('dragging');
@@ -150,27 +203,121 @@ const Controls = (() => {
           el.classList.remove('dragging');
         });
 
-        // Click to preview
         el.addEventListener('click', () => {
           App.state.selectedChord = variant;
           App.state.selectedVoicingIndex = 0;
           App.emit('chordSelected', variant);
           showChordDetail(variant);
-          // Play the chord
           if (typeof Audio !== 'undefined' && Audio.playChord) {
             Audio.playChord(variant);
           }
         });
 
-        container.appendChild(el);
+        contents.appendChild(el);
+      });
+
+      groupDiv.appendChild(contents);
+      container.appendChild(groupDiv);
+    });
+
+    // Creator button at bottom of palette
+    const creatorsDiv = document.createElement('div');
+    creatorsDiv.className = 'palette-creators';
+
+    const createChordBtn = document.createElement('button');
+    createChordBtn.className = 'btn-create-chord';
+    createChordBtn.textContent = '+ Create Chord';
+    createChordBtn.addEventListener('click', () => {
+      if (typeof ChordCreator !== 'undefined') ChordCreator.open();
+    });
+    creatorsDiv.appendChild(createChordBtn);
+
+    container.appendChild(creatorsDiv);
+
+    renderCustomVoicings();
+  }
+
+  function renderCustomVoicings() {
+    const container = document.getElementById('palette-chords');
+    if (!container) return;
+
+    const oldGroup = container.querySelector('.custom-voicings-group');
+    if (oldGroup) oldGroup.remove();
+
+    const customs = App.state.customVoicings;
+    if (!customs || customs.length === 0) return;
+
+    const group = document.createElement('div');
+    group.className = 'custom-voicings-group';
+
+    const groupLabel = document.createElement('div');
+    groupLabel.className = 'palette-group-label';
+    groupLabel.textContent = 'Custom Voicings';
+    group.appendChild(groupLabel);
+
+    customs.forEach(cv => {
+      const el = document.createElement('div');
+      el.className = 'palette-chord custom-voicing-chip';
+      el.draggable = true;
+      el.dataset.chord = cv.name;
+      el.dataset.customId = cv.id;
+
+      const miniDiv = document.createElement('div');
+      miniDiv.className = 'mini-diagram';
+      el.appendChild(miniDiv);
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'chord-name';
+      nameSpan.textContent = cv.label || cv.name;
+      el.appendChild(nameSpan);
+
+      const delBtn = document.createElement('span');
+      delBtn.className = 'custom-voicing-delete';
+      delBtn.textContent = '\u00d7';
+      delBtn.title = 'Remove custom voicing';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeCustomVoicing(cv.id);
+      });
+      el.appendChild(delBtn);
+
+      el.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', cv.name);
+        e.dataTransfer.setData('application/x-custom-voicing-id', cv.id);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', () => el.classList.remove('dragging'));
+
+      el.addEventListener('click', () => {
+        App.state.selectedChord = cv.name;
+        App.state.selectedVoicingIndex = 0;
+        App.emit('chordSelected', cv.name);
+        showChordDetail(cv.name);
+        if (typeof Audio !== 'undefined' && Audio.playChord) {
+          Audio.playChord(cv.name);
+        }
+      });
+
+      group.appendChild(el);
+
+      requestAnimationFrame(() => {
+        if (cv.voicing) Diagrams.renderMini(miniDiv, cv.voicing);
       });
     });
+
+    container.appendChild(group);
+  }
+
+  function removeCustomVoicing(id) {
+    App.state.customVoicings = App.state.customVoicings.filter(cv => cv.id !== id);
+    ChordsDB.removeCustomVoicing(id);
+    App.emit('customVoicingRemoved', { id });
+    App.emit('songChanged');
   }
 
   function showChordDetail(chordName) {
     document.getElementById('detail-chord-name').textContent = chordName;
 
-    // Main diagram
     const diagramContainer = document.getElementById('detail-diagram');
     diagramContainer.innerHTML = '';
     const voicings = ChordsDB.getVoicings(chordName, App.state.capo);
@@ -186,7 +333,6 @@ const Controls = (() => {
       diagramContainer.innerHTML = '<p style="color:var(--text-muted);font-size:0.8rem;">No voicing available</p>';
     }
 
-    // Alternative voicings
     const voicingOptions = document.getElementById('voicing-options');
     voicingOptions.innerHTML = '';
 
@@ -211,11 +357,13 @@ const Controls = (() => {
 
         thumb.addEventListener('click', () => {
           App.state.selectedVoicingIndex = i;
-          // Update the slot's voicing too
+          // Update the selected chord's voicing in the section
           if (App.state.selectedSlot) {
             const slot = App.state.selectedSlot;
-            const measure = App.state.sections[slot.sectionIndex]?.measures[slot.measureIndex];
-            if (measure) measure.voicingIndex = i;
+            const section = App.state.sections[slot.sectionIndex];
+            if (section && section.chords[slot.chordIndex]) {
+              section.chords[slot.chordIndex].voicingIndex = i;
+            }
           }
           showChordDetail(chordName);
           App.emit('songChanged');
@@ -225,7 +373,6 @@ const Controls = (() => {
       });
     }
 
-    // Suggestions
     updateSuggestions(chordName);
   }
 
@@ -233,11 +380,9 @@ const Controls = (() => {
     const listEl = document.getElementById('suggestion-list');
     listEl.innerHTML = '';
 
-    // Clear previous suggested state
     document.querySelectorAll('.palette-chord.suggested').forEach(el => {
       el.classList.remove('suggested');
     });
-    // Remove any existing suggestions group at top
     const oldGroup = document.getElementById('palette-suggestions-group');
     if (oldGroup) oldGroup.remove();
 
@@ -247,9 +392,7 @@ const Controls = (() => {
     if (suggestions.length === 0) return;
 
     const paletteContainer = document.getElementById('palette-chords');
-    const suggestedNames = new Set(suggestions.map(s => s.chord));
 
-    // Build a suggestions group to insert at the top of the palette
     const sugGroup = document.createElement('div');
     sugGroup.id = 'palette-suggestions-group';
 
@@ -259,7 +402,6 @@ const Controls = (() => {
     sugGroup.appendChild(sugLabel);
 
     suggestions.forEach(s => {
-      // Detail panel chip
       const chip = document.createElement('div');
       chip.className = 'suggestion-chip';
       chip.innerHTML = `
@@ -268,35 +410,16 @@ const Controls = (() => {
       `;
 
       chip.addEventListener('click', () => {
-        if (App.state.selectedSlot) {
-          const { sectionIndex, measureIndex } = App.state.selectedSlot;
-          const section = App.state.sections[sectionIndex];
-          if (section) {
-            for (let i = measureIndex + 1; i < section.measures.length; i++) {
-              if (!section.measures[i].chord) {
-                section.measures[i].chord = s.chord;
-                section.measures[i].voicingIndex = 0;
-                App.state.selectedSlot = { sectionIndex, measureIndex: i };
-                Timeline.render();
-                App.emit('songChanged');
-                updateSuggestions(s.chord);
-                return;
-              }
-            }
-          }
-        }
         App.state.selectedChord = s.chord;
         showChordDetail(s.chord);
       });
 
       listEl.appendChild(chip);
 
-      // Clone matching palette chord into the suggestions group at top
       const existing = paletteContainer.querySelector(`.palette-chord[data-chord="${s.chord}"]`);
       if (existing) {
         const clone = existing.cloneNode(true);
         clone.classList.add('suggested');
-        // Re-attach event listeners on clone
         clone.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/plain', s.chord);
           clone.classList.add('dragging');
@@ -312,7 +435,6 @@ const Controls = (() => {
           }
         });
 
-        // Add reason tag
         const reasonTag = document.createElement('span');
         reasonTag.className = 'chord-reason';
         reasonTag.textContent = s.reason;
@@ -322,9 +444,8 @@ const Controls = (() => {
       }
     });
 
-    // Insert suggestions group at the very top of the palette
     paletteContainer.insertBefore(sugGroup, paletteContainer.firstChild);
   }
 
-  return { init, renderPalette, showChordDetail };
+  return { init, renderPalette, showChordDetail, renderCustomVoicings };
 })();
