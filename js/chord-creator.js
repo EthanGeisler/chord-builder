@@ -37,6 +37,81 @@ const ChordCreator = (() => {
     }
     const saveBtn = document.getElementById('creator-save-btn');
     if (saveBtn) saveBtn.textContent = 'Apply to Chord';
+
+    // Build chord palette selector
+    buildChordSelector(chordEntry);
+  }
+
+  function buildChordSelector(chordEntry) {
+    const container = document.getElementById('creator-chord-select');
+    if (!container) return;
+    container.style.display = '';
+    container.innerHTML = '';
+
+    const label = document.createElement('span');
+    label.className = 'chord-select-label';
+    label.textContent = 'Change chord:';
+    container.appendChild(label);
+
+    const diatonic = Theory.getDiatonicChords(App.state.key, App.state.mode);
+    const paletteWrap = document.createElement('div');
+    paletteWrap.className = 'chord-select-palette';
+
+    // Group by scale degree
+    diatonic.forEach(deg => {
+      const group = document.createElement('div');
+      group.className = 'chord-select-group';
+
+      const groupHeader = document.createElement('button');
+      groupHeader.className = 'chord-select-group-toggle';
+      groupHeader.textContent = deg.root;
+      groupHeader.addEventListener('click', () => {
+        group.classList.toggle('expanded');
+      });
+      group.appendChild(groupHeader);
+
+      const variants = document.createElement('div');
+      variants.className = 'chord-select-variants';
+
+      deg.variants.forEach(v => {
+        const btn = document.createElement('button');
+        btn.className = 'chord-select-btn' + (v === chordEntry.chord ? ' active' : '');
+        btn.textContent = v;
+        btn.addEventListener('click', () => {
+          // Update the chord entry
+          chordEntry.chord = v;
+          chordEntry.voicingIndex = 0;
+
+          // Load new voicing into fretboard
+          const voicings = ChordsDB.getVoicings(v, App.state.capo);
+          const voicing = voicings && voicings[0];
+          if (voicing && voicing.positions) {
+            positions = voicing.positions.slice();
+            renderFretboard();
+            updateDetection();
+            updatePreview();
+          }
+
+          // Update active state
+          container.querySelectorAll('.chord-select-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          // Update title
+          const section = App.state.sections[targetSectionIdx];
+          const h3 = overlayEl && overlayEl.querySelector('h3');
+          if (h3 && section) h3.textContent = `Edit Chord — ${v} (${section.name})`;
+
+          App.emit('songChanged');
+          Timeline.render();
+        });
+        variants.appendChild(btn);
+      });
+
+      group.appendChild(variants);
+      paletteWrap.appendChild(group);
+    });
+
+    container.appendChild(paletteWrap);
   }
 
   function open() {
@@ -53,6 +128,7 @@ const ChordCreator = (() => {
 
     modal.innerHTML = `
       <h3>Create Custom Chord</h3>
+      <div class="creator-chord-select" id="creator-chord-select" style="display:none;"></div>
       <div class="creator-detected" id="creator-detected">Detected: <span>—</span></div>
       <div class="creator-body">
         <div class="creator-fretboard-wrapper">

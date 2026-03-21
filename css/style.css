@@ -1028,6 +1028,84 @@ button:active { transform: scale(0.97); }
   margin-bottom: 8px;
 }
 
+/* Chord selector in edit modal */
+.creator-chord-select {
+  margin-bottom: 10px;
+}
+
+.chord-select-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.chord-select-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chord-select-group {
+  position: relative;
+}
+
+.chord-select-group-toggle {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.chord-select-group-toggle:hover {
+  border-color: var(--accent);
+}
+
+.chord-select-variants {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  min-width: 80px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chord-select-group.expanded .chord-select-variants {
+  display: flex;
+}
+
+.chord-select-btn {
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chord-select-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+.chord-select-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .creator-detected {
   font-size: 0.95rem;
   color: var(--text-muted);
