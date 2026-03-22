@@ -222,6 +222,87 @@ const Theory = (() => {
     return [];
   }
 
+  // Detect most likely key + mode from a list of chord names.
+  // Scores each key/mode by how many chords are diatonic to it,
+  // weighted by position (earlier chords matter more) and frequency.
+  function detectKeyFromChords(chordNames) {
+    if (!chordNames || !chordNames.length) return null;
+
+    // Extract root from chord name
+    function chordRoot(name) {
+      const m = name.match(/^[A-G][#b]?/);
+      return m ? m[0] : null;
+    }
+
+    // Normalize chord for matching: strip slash bass, keep quality
+    function normalizeForMatch(name) {
+      return name.split('/')[0].trim();
+    }
+
+    let bestScore = -1;
+    let bestKey = 'C';
+    let bestMode = 'major';
+
+    // Only check major and minor — they cover ~95% of songs
+    // and avoid false positives from modes with similar diatonic sets
+    const modesToCheck = ['major', 'minor'];
+
+    for (const key of KEYS) {
+      for (const mode of modesToCheck) {
+        const diatonic = getDiatonicChords(key, mode);
+        const allVariants = new Set();
+        const triadRoots = new Set();
+
+        for (const ch of diatonic) {
+          for (const v of ch.variants) allVariants.add(v);
+          allVariants.add(ch.triad);
+          allVariants.add(ch.seventh);
+          triadRoots.add(ch.root);
+        }
+
+        let score = 0;
+        const totalChords = chordNames.length;
+
+        for (let i = 0; i < totalChords; i++) {
+          const name = normalizeForMatch(chordNames[i]);
+          const root = chordRoot(name);
+
+          // Position weight: first chords matter more
+          const posWeight = 1 + (totalChords - i) / totalChords;
+
+          if (allVariants.has(name)) {
+            // Exact diatonic match
+            score += 3 * posWeight;
+          } else if (root && triadRoots.has(root)) {
+            // Root is in the scale (extension/alteration of a diatonic chord)
+            score += 1.5 * posWeight;
+          }
+        }
+
+        // Bonus: if first chord is the tonic
+        const firstRoot = chordRoot(normalizeForMatch(chordNames[0]));
+        if (firstRoot === key) score += 2;
+
+        // Bonus: if last chord resolves to tonic
+        const lastRoot = chordRoot(normalizeForMatch(chordNames[chordNames.length - 1]));
+        if (lastRoot === key) score += 1.5;
+
+        // Minor bonus: if first chord quality matches mode
+        const firstName = normalizeForMatch(chordNames[0]);
+        if (mode === 'minor' && /m(?!aj)/.test(firstName) && firstRoot === key) score += 1;
+        if (mode === 'major' && !/m/.test(firstName) && firstRoot === key) score += 1;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestKey = key;
+          bestMode = mode;
+        }
+      }
+    }
+
+    return { key: bestKey, mode: bestMode, confidence: bestScore };
+  }
+
   return {
     KEYS,
     MODES,
@@ -231,5 +312,6 @@ const Theory = (() => {
     findDegree,
     getChordNotes,
     detectChordFromPositions,
+    detectKeyFromChords,
   };
 })();

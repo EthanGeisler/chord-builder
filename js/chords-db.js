@@ -8,7 +8,7 @@ const ChordsDB = (() => {
   // Load voicings from JSON file
   async function load() {
     try {
-      const resp = await fetch('data/voicings.json');
+      const resp = await fetch('data/voicings.json?v=' + Date.now());
       voicingsData = await resp.json();
       console.log(`ChordsDB: Loaded ${Object.keys(voicingsData).length} chords`);
     } catch (e) {

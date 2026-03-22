@@ -3,6 +3,7 @@
 const Storage = (() => {
   const AUTOSAVE_KEY = 'chord-builder-autosave';
   const PROJECTS_KEY = 'chord-builder-projects';
+  const BACKUP_URL = 'http://localhost:3001';
 
   function init() {
     // Try to restore autosave
@@ -27,10 +28,21 @@ const Storage = (() => {
 
   function autoSave() {
     try {
-      localStorage.setItem(AUTOSAVE_KEY, App.serialize());
+      const data = App.serialize();
+      localStorage.setItem(AUTOSAVE_KEY, data);
+      // Also backup to disk via proxy
+      backupToDisk(App.state.projectName || 'autosave', data);
     } catch (e) {
       console.warn('Auto-save failed:', e);
     }
+  }
+
+  function backupToDisk(name, data) {
+    fetch(BACKUP_URL + '/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, data }),
+    }).catch(() => {}); // silent fail — disk backup is best-effort
   }
 
   function restoreAutoSave() {
@@ -80,11 +92,13 @@ const Storage = (() => {
     if (!name) return;
 
     App.state.projectName = name;
+    const data = App.serialize();
     const projects = getProjects();
-    projects[name] = App.serialize();
+    projects[name] = data;
     saveProjects(projects);
     autoSave();
     populateLoadDropdown();
+    backupToDisk(name, data);
   }
 
   function loadProject() {
@@ -178,6 +192,7 @@ const Storage = (() => {
   Controls.init();
   Timeline.init();
   AudioEngine.init();
+  Importer.init();
   Storage.init();
 
   console.log('Chord Builder initialized.');

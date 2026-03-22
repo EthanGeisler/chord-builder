@@ -205,8 +205,10 @@ const AudioEngine = (() => {
     const currentSection = sections[playbackState.sectionIdx];
     const col = playbackState.currentCol;
 
-    // Update visual
-    Timeline.setPlayingColumn(playbackState.sectionIdx, col);
+    // Update visual (pass column duration for smooth playhead)
+    const _beatDur = App.getBeatDuration();
+    const _colDurMs = (_beatDur / currentSection.subdivisions) * 1000;
+    Timeline.setPlayingColumn(playbackState.sectionIdx, col, _colDurMs);
     App.state.playbackPosition = {
       section: playbackState.sectionIdx,
       col,

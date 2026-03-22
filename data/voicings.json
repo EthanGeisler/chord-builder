@@ -15,6 +15,22 @@
       "label": "Barre A-form (3rd fret)"
     }
   ],
+  "C#": [
+    {
+      "positions": [-1, 4, 6, 6, 6, 4],
+      "fingers": [0, 1, 3, 3, 3, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre A-form (4th fret)"
+    },
+    {
+      "positions": [-1, -1, 6, 6, 6, 4],
+      "fingers": [0, 0, 2, 3, 4, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C# partial (high strings)"
+    }
+  ],
   "D": [
     {
       "positions": [-1, -1, 0, 2, 3, 2],
@@ -29,6 +45,22 @@
       "barres": [{ "fromString": 5, "toString": 1, "fret": 5 }],
       "baseFret": 1,
       "label": "Barre A-form (5th fret)"
+    }
+  ],
+  "D#": [
+    {
+      "positions": [-1, 6, 8, 8, 8, 6],
+      "fingers": [0, 1, 3, 3, 3, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre A-form (6th fret)"
+    },
+    {
+      "positions": [-1, -1, 1, 3, 4, 3],
+      "fingers": [0, 0, 1, 2, 4, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D# partial"
     }
   ],
   "E": [
@@ -63,6 +95,22 @@
       "label": "Partial F (no bass)"
     }
   ],
+  "F#": [
+    {
+      "positions": [2, 4, 4, 3, 2, 2],
+      "fingers": [1, 3, 4, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre E-form (2nd fret)"
+    },
+    {
+      "positions": [-1, -1, 4, 3, 2, 2],
+      "fingers": [0, 0, 3, 2, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "F# partial (no bass)"
+    }
+  ],
   "G": [
     {
       "positions": [3, 2, 0, 0, 0, 3],
@@ -86,6 +134,22 @@
       "label": "Barre E-form (3rd fret)"
     }
   ],
+  "G#": [
+    {
+      "positions": [4, 6, 6, 5, 4, 4],
+      "fingers": [1, 3, 4, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre E-form (4th fret)"
+    },
+    {
+      "positions": [-1, -1, 6, 5, 4, 4],
+      "fingers": [0, 0, 3, 2, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "G# partial (high strings)"
+    }
+  ],
   "A": [
     {
       "positions": [-1, 0, 2, 2, 2, 0],
@@ -102,22 +166,6 @@
       "label": "Barre E-form (5th fret)"
     }
   ],
-  "B": [
-    {
-      "positions": [-1, 2, 4, 4, 4, 2],
-      "fingers": [0, 1, 2, 3, 4, 1],
-      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
-      "baseFret": 1,
-      "label": "Barre A-form (2nd fret)"
-    },
-    {
-      "positions": [7, 9, 9, 8, 7, 7],
-      "fingers": [1, 3, 4, 2, 1, 1],
-      "barres": [{ "fromString": 6, "toString": 1, "fret": 7 }],
-      "baseFret": 1,
-      "label": "Barre E-form (7th fret)"
-    }
-  ],
   "Bb": [
     {
       "positions": [-1, 1, 3, 3, 3, 1],
@@ -132,6 +180,22 @@
       "barres": [{ "fromString": 6, "toString": 1, "fret": 6 }],
       "baseFret": 1,
       "label": "Barre E-form (6th fret)"
+    }
+  ],
+  "B": [
+    {
+      "positions": [-1, 2, 4, 4, 4, 2],
+      "fingers": [0, 1, 2, 3, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre A-form (2nd fret)"
+    },
+    {
+      "positions": [7, 9, 9, 8, 7, 7],
+      "fingers": [1, 3, 4, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 7 }],
+      "baseFret": 1,
+      "label": "Barre E-form (7th fret)"
     }
   ],
   "Eb": [
@@ -182,6 +246,22 @@
       "label": "Barre Em-form (5th fret)"
     }
   ],
+  "Bbm": [
+    {
+      "positions": [-1, 1, 3, 3, 2, 1],
+      "fingers": [0, 1, 3, 4, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre Am-form (1st fret)"
+    },
+    {
+      "positions": [6, 8, 8, 6, 6, 6],
+      "fingers": [1, 3, 4, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Em-form (6th fret)"
+    }
+  ],
   "Bm": [
     {
       "positions": [-1, 2, 4, 4, 3, 2],
@@ -207,6 +287,22 @@
       "label": "Barre Am-form (3rd fret)"
     }
   ],
+  "C#m": [
+    {
+      "positions": [-1, 4, 6, 6, 5, 4],
+      "fingers": [0, 1, 3, 4, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Am-form (4th fret)"
+    },
+    {
+      "positions": [-1, -1, 6, 6, 5, 4],
+      "fingers": [0, 0, 3, 4, 2, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C#m partial"
+    }
+  ],
   "Dm": [
     {
       "positions": [-1, -1, 0, 2, 3, 1],
@@ -221,6 +317,24 @@
       "barres": [{ "fromString": 5, "toString": 1, "fret": 5 }],
       "baseFret": 1,
       "label": "Barre Am-form (5th fret)"
+    }
+  ],
+  "D#m": [
+    {
+      "positions": [-1, 6, 8, 8, 7, 6],
+      "fingers": [0, 1, 3, 4, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Am-form (6th fret)"
+    }
+  ],
+  "Ebm": [
+    {
+      "positions": [-1, 6, 8, 8, 7, 6],
+      "fingers": [0, 1, 3, 4, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Am-form (6th fret)"
     }
   ],
   "Em": [
@@ -248,6 +362,22 @@
       "label": "Barre Em-form (1st fret)"
     }
   ],
+  "F#m": [
+    {
+      "positions": [2, 4, 4, 2, 2, 2],
+      "fingers": [1, 3, 4, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Em-form (2nd fret)"
+    },
+    {
+      "positions": [-1, -1, 4, 2, 2, 2],
+      "fingers": [0, 0, 4, 1, 1, 1],
+      "barres": [{ "fromString": 3, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "F#m partial"
+    }
+  ],
   "Gm": [
     {
       "positions": [3, 5, 5, 3, 3, 3],
@@ -255,6 +385,24 @@
       "barres": [{ "fromString": 6, "toString": 1, "fret": 3 }],
       "baseFret": 1,
       "label": "Barre Em-form (3rd fret)"
+    }
+  ],
+  "G#m": [
+    {
+      "positions": [4, 6, 6, 4, 4, 4],
+      "fingers": [1, 3, 4, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Em-form (4th fret)"
+    }
+  ],
+  "Abm": [
+    {
+      "positions": [4, 6, 6, 4, 4, 4],
+      "fingers": [1, 3, 4, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Em-form (4th fret)"
     }
   ],
   "C7": [
@@ -266,6 +414,22 @@
       "label": "Open C7"
     }
   ],
+  "C#7": [
+    {
+      "positions": [-1, 4, 3, 4, 2, -1],
+      "fingers": [0, 3, 2, 4, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C#7"
+    },
+    {
+      "positions": [-1, 4, 6, 4, 6, 4],
+      "fingers": [0, 1, 3, 1, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre A7-form (4th fret)"
+    }
+  ],
   "D7": [
     {
       "positions": [-1, -1, 0, 2, 1, 2],
@@ -273,6 +437,31 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open D7"
+    }
+  ],
+  "D#7": [
+    {
+      "positions": [-1, 6, 8, 6, 8, 6],
+      "fingers": [0, 1, 3, 1, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre A7-form (6th fret)"
+    }
+  ],
+  "Eb7": [
+    {
+      "positions": [-1, 6, 8, 6, 8, 6],
+      "fingers": [0, 1, 3, 1, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre A7-form (6th fret)"
+    },
+    {
+      "positions": [-1, -1, 1, 3, 2, 3],
+      "fingers": [0, 0, 1, 3, 2, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Eb7 partial"
     }
   ],
   "E7": [
@@ -291,6 +480,31 @@
       "label": "Open E7 (alt)"
     }
   ],
+  "F7": [
+    {
+      "positions": [1, 3, 1, 2, 1, 1],
+      "fingers": [1, 3, 1, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre E7-form (1st fret)"
+    },
+    {
+      "positions": [-1, -1, 1, 2, 1, 1],
+      "fingers": [0, 0, 1, 2, 1, 1],
+      "barres": [{ "fromString": 3, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "F7 partial"
+    }
+  ],
+  "F#7": [
+    {
+      "positions": [2, 4, 2, 3, 2, 2],
+      "fingers": [1, 3, 1, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre E7-form (2nd fret)"
+    }
+  ],
   "G7": [
     {
       "positions": [3, 2, 0, 0, 0, 1],
@@ -298,6 +512,24 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open G7"
+    }
+  ],
+  "G#7": [
+    {
+      "positions": [4, 6, 4, 5, 4, 4],
+      "fingers": [1, 3, 1, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre E7-form (4th fret)"
+    }
+  ],
+  "Ab7": [
+    {
+      "positions": [4, 6, 4, 5, 4, 4],
+      "fingers": [1, 3, 1, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre E7-form (4th fret)"
     }
   ],
   "A7": [
@@ -309,6 +541,22 @@
       "label": "Open A7"
     }
   ],
+  "Bb7": [
+    {
+      "positions": [-1, 1, 3, 1, 3, 1],
+      "fingers": [0, 1, 3, 1, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre A7-form (1st fret)"
+    },
+    {
+      "positions": [6, 8, 6, 7, 6, 6],
+      "fingers": [1, 3, 1, 2, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre E7-form (6th fret)"
+    }
+  ],
   "B7": [
     {
       "positions": [-1, 2, 1, 2, 0, 2],
@@ -316,6 +564,174 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open B7"
+    }
+  ],
+  "Cm7": [
+    {
+      "positions": [-1, 3, 5, 3, 4, 3],
+      "fingers": [0, 1, 3, 1, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 3 }],
+      "baseFret": 1,
+      "label": "Barre Am7-form (3rd fret)"
+    },
+    {
+      "positions": [8, 10, 8, 8, 8, 8],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 8 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (8th fret)"
+    }
+  ],
+  "C#m7": [
+    {
+      "positions": [-1, 4, 6, 4, 5, 4],
+      "fingers": [0, 1, 3, 1, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Am7-form (4th fret)"
+    }
+  ],
+  "Dm7": [
+    {
+      "positions": [-1, -1, 0, 2, 1, 1],
+      "fingers": [0, 0, 0, 2, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Open Dm7"
+    }
+  ],
+  "D#m7": [
+    {
+      "positions": [-1, 6, 8, 6, 7, 6],
+      "fingers": [0, 1, 3, 1, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Am7-form (6th fret)"
+    }
+  ],
+  "Ebm7": [
+    {
+      "positions": [-1, 6, 8, 6, 7, 6],
+      "fingers": [0, 1, 3, 1, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Am7-form (6th fret)"
+    }
+  ],
+  "Em7": [
+    {
+      "positions": [0, 2, 0, 0, 0, 0],
+      "fingers": [0, 2, 0, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Em7"
+    },
+    {
+      "positions": [0, 2, 2, 0, 3, 0],
+      "fingers": [0, 2, 3, 0, 4, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Em7 (alt)"
+    }
+  ],
+  "Fm7": [
+    {
+      "positions": [1, 3, 1, 1, 1, 1],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (1st fret)"
+    },
+    {
+      "positions": [-1, -1, 1, 1, 1, 1],
+      "fingers": [0, 0, 1, 1, 1, 1],
+      "barres": [{ "fromString": 4, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Fm7 partial"
+    }
+  ],
+  "F#m7": [
+    {
+      "positions": [2, 4, 2, 2, 2, 2],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (2nd fret)"
+    }
+  ],
+  "Gm7": [
+    {
+      "positions": [3, 5, 3, 3, 3, 3],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 3 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (3rd fret)"
+    },
+    {
+      "positions": [-1, -1, 3, 3, 3, 3],
+      "fingers": [0, 0, 1, 1, 1, 1],
+      "barres": [{ "fromString": 4, "toString": 1, "fret": 3 }],
+      "baseFret": 1,
+      "label": "Gm7 partial"
+    }
+  ],
+  "G#m7": [
+    {
+      "positions": [4, 6, 4, 4, 4, 4],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (4th fret)"
+    }
+  ],
+  "Abm7": [
+    {
+      "positions": [4, 6, 4, 4, 4, 4],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (4th fret)"
+    }
+  ],
+  "Am7": [
+    {
+      "positions": [-1, 0, 2, 0, 1, 0],
+      "fingers": [0, 0, 2, 0, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Am7"
+    }
+  ],
+  "Bbm7": [
+    {
+      "positions": [-1, 1, 3, 1, 2, 1],
+      "fingers": [0, 1, 3, 1, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre Am7-form (1st fret)"
+    },
+    {
+      "positions": [6, 8, 6, 6, 6, 6],
+      "fingers": [1, 3, 1, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Em7-form (6th fret)"
+    }
+  ],
+  "Bm7": [
+    {
+      "positions": [-1, 2, 0, 2, 0, 2],
+      "fingers": [0, 1, 0, 2, 0, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Bm7"
+    },
+    {
+      "positions": [-1, 2, 4, 2, 3, 2],
+      "fingers": [0, 1, 3, 1, 2, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Am7-form (2nd fret)"
     }
   ],
   "Cmaj7": [
@@ -327,6 +743,15 @@
       "label": "Open Cmaj7"
     }
   ],
+  "C#maj7": [
+    {
+      "positions": [-1, 4, 3, 1, 1, 1],
+      "fingers": [0, 4, 3, 1, 1, 1],
+      "barres": [{ "fromString": 3, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "C#maj7"
+    }
+  ],
   "Dmaj7": [
     {
       "positions": [-1, -1, 0, 2, 2, 2],
@@ -334,6 +759,31 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open Dmaj7"
+    }
+  ],
+  "D#maj7": [
+    {
+      "positions": [-1, 6, 8, 7, 8, 6],
+      "fingers": [0, 1, 3, 2, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Amaj7-form (6th fret)"
+    }
+  ],
+  "Ebmaj7": [
+    {
+      "positions": [-1, 6, 8, 7, 8, 6],
+      "fingers": [0, 1, 3, 2, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 6 }],
+      "baseFret": 1,
+      "label": "Barre Amaj7-form (6th fret)"
+    },
+    {
+      "positions": [-1, -1, 1, 3, 3, 3],
+      "fingers": [0, 0, 1, 3, 3, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Ebmaj7 partial"
     }
   ],
   "Emaj7": [
@@ -361,6 +811,15 @@
       "label": "Fmaj7 (with bass)"
     }
   ],
+  "F#maj7": [
+    {
+      "positions": [2, 4, 3, 3, 2, 2],
+      "fingers": [1, 4, 2, 3, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Emaj7-form (2nd fret)"
+    }
+  ],
   "Gmaj7": [
     {
       "positions": [3, 2, 0, 0, 0, 2],
@@ -368,6 +827,24 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open Gmaj7"
+    }
+  ],
+  "G#maj7": [
+    {
+      "positions": [4, 6, 5, 5, 4, 4],
+      "fingers": [1, 4, 2, 3, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Emaj7-form (4th fret)"
+    }
+  ],
+  "Abmaj7": [
+    {
+      "positions": [4, 6, 5, 5, 4, 4],
+      "fingers": [1, 4, 2, 3, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Emaj7-form (4th fret)"
     }
   ],
   "Amaj7": [
@@ -379,63 +856,45 @@
       "label": "Open Amaj7"
     }
   ],
-  "Am7": [
+  "Bbmaj7": [
     {
-      "positions": [-1, 0, 2, 0, 1, 0],
-      "fingers": [0, 0, 2, 0, 1, 0],
-      "barres": [],
+      "positions": [-1, 1, 3, 2, 3, 1],
+      "fingers": [0, 1, 3, 2, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 1 }],
       "baseFret": 1,
-      "label": "Open Am7"
-    }
-  ],
-  "Bm7": [
-    {
-      "positions": [-1, 2, 0, 2, 0, 2],
-      "fingers": [0, 1, 0, 2, 0, 3],
-      "barres": [],
-      "baseFret": 1,
-      "label": "Open Bm7"
+      "label": "Barre Amaj7-form (1st fret)"
     },
     {
-      "positions": [-1, 2, 4, 2, 3, 2],
-      "fingers": [0, 1, 3, 1, 2, 1],
-      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
+      "positions": [6, 8, 7, 7, 6, 6],
+      "fingers": [1, 4, 2, 3, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 6 }],
       "baseFret": 1,
-      "label": "Barre Am7-form (2nd fret)"
+      "label": "Barre Emaj7-form (6th fret)"
     }
   ],
-  "Dm7": [
+  "Csus2": [
     {
-      "positions": [-1, -1, 0, 2, 1, 1],
-      "fingers": [0, 0, 0, 2, 1, 1],
-      "barres": [{ "fromString": 2, "toString": 1, "fret": 1 }],
-      "baseFret": 1,
-      "label": "Open Dm7"
-    }
-  ],
-  "Em7": [
-    {
-      "positions": [0, 2, 0, 0, 0, 0],
-      "fingers": [0, 2, 0, 0, 0, 0],
+      "positions": [-1, 3, 0, 0, 1, 0],
+      "fingers": [0, 3, 0, 0, 1, 0],
       "barres": [],
       "baseFret": 1,
-      "label": "Open Em7"
+      "label": "Open Csus2"
     },
     {
-      "positions": [0, 2, 2, 0, 3, 0],
-      "fingers": [0, 2, 3, 0, 4, 0],
-      "barres": [],
+      "positions": [-1, 3, 5, 5, 3, 3],
+      "fingers": [0, 1, 3, 4, 1, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 3 }],
       "baseFret": 1,
-      "label": "Open Em7 (alt)"
+      "label": "Barre Asus2-form (3rd fret)"
     }
   ],
-  "Asus2": [
+  "C#sus2": [
     {
-      "positions": [-1, 0, 2, 2, 0, 0],
-      "fingers": [0, 0, 1, 2, 0, 0],
-      "barres": [],
+      "positions": [-1, 4, 6, 6, 4, 4],
+      "fingers": [0, 1, 3, 4, 1, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 4 }],
       "baseFret": 1,
-      "label": "Open Asus2"
+      "label": "Barre Asus2-form (4th fret)"
     }
   ],
   "Dsus2": [
@@ -456,13 +915,115 @@
       "label": "Open Esus2"
     }
   ],
-  "Asus4": [
+  "Fsus2": [
     {
-      "positions": [-1, 0, 2, 2, 3, 0],
-      "fingers": [0, 0, 1, 2, 3, 0],
+      "positions": [-1, -1, 3, 0, 1, 1],
+      "fingers": [0, 0, 3, 0, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Fsus2 partial"
+    },
+    {
+      "positions": [1, 3, 3, 0, 1, 1],
+      "fingers": [1, 3, 4, 0, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 2, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Fsus2"
+    }
+  ],
+  "F#sus2": [
+    {
+      "positions": [-1, -1, 4, 1, 2, 2],
+      "fingers": [0, 0, 4, 1, 2, 3],
       "barres": [],
       "baseFret": 1,
-      "label": "Open Asus4"
+      "label": "F#sus2 partial"
+    }
+  ],
+  "Gsus2": [
+    {
+      "positions": [3, 0, 0, 0, 0, 3],
+      "fingers": [2, 0, 0, 0, 0, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Gsus2"
+    },
+    {
+      "positions": [3, 0, 0, 0, 3, 3],
+      "fingers": [1, 0, 0, 0, 3, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Gsus2 (alt)"
+    }
+  ],
+  "G#sus2": [
+    {
+      "positions": [4, 6, 6, 3, 4, 4],
+      "fingers": [1, 3, 4, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Esus2-form (4th fret)"
+    }
+  ],
+  "Absus2": [
+    {
+      "positions": [4, 6, 6, 3, 4, 4],
+      "fingers": [1, 3, 4, 1, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Esus2-form (4th fret)"
+    }
+  ],
+  "Asus2": [
+    {
+      "positions": [-1, 0, 2, 2, 0, 0],
+      "fingers": [0, 0, 1, 2, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Asus2"
+    }
+  ],
+  "Bbsus2": [
+    {
+      "positions": [-1, 1, 3, 3, 1, 1],
+      "fingers": [0, 1, 3, 4, 1, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre Asus2-form (1st fret)"
+    }
+  ],
+  "Bsus2": [
+    {
+      "positions": [-1, 2, 4, 4, 2, 2],
+      "fingers": [0, 1, 3, 4, 1, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Asus2-form (2nd fret)"
+    }
+  ],
+  "Csus4": [
+    {
+      "positions": [-1, 3, 3, 0, 1, 1],
+      "fingers": [0, 3, 4, 0, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Open Csus4"
+    },
+    {
+      "positions": [-1, 3, 5, 5, 6, 3],
+      "fingers": [0, 1, 2, 3, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 3 }],
+      "baseFret": 1,
+      "label": "Barre Asus4-form (3rd fret)"
+    }
+  ],
+  "C#sus4": [
+    {
+      "positions": [-1, 4, 6, 6, 7, 4],
+      "fingers": [0, 1, 2, 3, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Asus4-form (4th fret)"
     }
   ],
   "Dsus4": [
@@ -483,6 +1044,85 @@
       "label": "Open Esus4"
     }
   ],
+  "Fsus4": [
+    {
+      "positions": [1, 3, 3, 3, 1, 1],
+      "fingers": [1, 2, 3, 4, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre Esus4-form (1st fret)"
+    }
+  ],
+  "F#sus4": [
+    {
+      "positions": [2, 4, 4, 4, 2, 2],
+      "fingers": [1, 2, 3, 4, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Esus4-form (2nd fret)"
+    }
+  ],
+  "Gsus4": [
+    {
+      "positions": [3, 5, 5, 5, 3, 3],
+      "fingers": [1, 2, 3, 4, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 3 }],
+      "baseFret": 1,
+      "label": "Barre Esus4-form (3rd fret)"
+    },
+    {
+      "positions": [3, -1, 0, 0, 1, 3],
+      "fingers": [2, 0, 0, 0, 1, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Gsus4"
+    }
+  ],
+  "G#sus4": [
+    {
+      "positions": [4, 6, 6, 6, 4, 4],
+      "fingers": [1, 2, 3, 4, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Esus4-form (4th fret)"
+    }
+  ],
+  "Absus4": [
+    {
+      "positions": [4, 6, 6, 6, 4, 4],
+      "fingers": [1, 2, 3, 4, 1, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 4 }],
+      "baseFret": 1,
+      "label": "Barre Esus4-form (4th fret)"
+    }
+  ],
+  "Asus4": [
+    {
+      "positions": [-1, 0, 2, 2, 3, 0],
+      "fingers": [0, 0, 1, 2, 3, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Asus4"
+    }
+  ],
+  "Bbsus4": [
+    {
+      "positions": [-1, 1, 3, 3, 4, 1],
+      "fingers": [0, 1, 2, 3, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "Barre Asus4-form (1st fret)"
+    }
+  ],
+  "Bsus4": [
+    {
+      "positions": [-1, 2, 4, 4, 5, 2],
+      "fingers": [0, 1, 2, 3, 4, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Barre Asus4-form (2nd fret)"
+    }
+  ],
   "Cadd9": [
     {
       "positions": [-1, 3, 2, 0, 3, 0],
@@ -490,6 +1130,47 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open Cadd9"
+    }
+  ],
+  "Dadd9": [
+    {
+      "positions": [-1, -1, 0, 2, 3, 0],
+      "fingers": [0, 0, 0, 1, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Dadd9"
+    },
+    {
+      "positions": [-1, 5, 4, 0, 3, 0],
+      "fingers": [0, 4, 3, 0, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Dadd9 (open voicing)"
+    }
+  ],
+  "Eadd9": [
+    {
+      "positions": [0, 2, 2, 1, 0, 2],
+      "fingers": [0, 2, 3, 1, 0, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Eadd9"
+    }
+  ],
+  "Fadd9": [
+    {
+      "positions": [-1, -1, 3, 2, 1, 3],
+      "fingers": [0, 0, 3, 2, 1, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Fadd9 partial"
+    },
+    {
+      "positions": [1, 0, 3, 2, 1, 0],
+      "fingers": [1, 0, 4, 3, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Fadd9 (with bass)"
     }
   ],
   "Gadd9": [
@@ -508,13 +1189,213 @@
       "label": "Open Gadd9"
     }
   ],
-  "Eadd9": [
+  "Aadd9": [
     {
-      "positions": [0, 2, 2, 1, 0, 2],
-      "fingers": [0, 2, 3, 1, 0, 4],
+      "positions": [-1, 0, 2, 2, 2, 2],
+      "fingers": [0, 0, 1, 2, 3, 4],
       "barres": [],
       "baseFret": 1,
-      "label": "Open Eadd9"
+      "label": "Open Aadd9"
+    },
+    {
+      "positions": [-1, 0, 2, 4, 2, 0],
+      "fingers": [0, 0, 1, 3, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Aadd9 (spread)"
+    }
+  ],
+  "Badd9": [
+    {
+      "positions": [-1, 2, 4, 4, 2, 2],
+      "fingers": [0, 1, 3, 4, 1, 1],
+      "barres": [{ "fromString": 5, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "Badd9"
+    }
+  ],
+  "A5": [
+    {
+      "positions": [-1, 0, 2, 2, -1, -1],
+      "fingers": [0, 0, 1, 2, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "A5 power chord"
+    },
+    {
+      "positions": [5, 7, 7, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "A5 (5th fret)"
+    }
+  ],
+  "Bb5": [
+    {
+      "positions": [-1, 1, 3, 3, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Bb5 power chord"
+    },
+    {
+      "positions": [6, 8, 8, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Bb5 (6th fret)"
+    }
+  ],
+  "B5": [
+    {
+      "positions": [-1, 2, 4, 4, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "B5 power chord"
+    },
+    {
+      "positions": [7, 9, 9, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "B5 (7th fret)"
+    }
+  ],
+  "C5": [
+    {
+      "positions": [-1, 3, 5, 5, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C5 power chord"
+    },
+    {
+      "positions": [8, 10, 10, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C5 (8th fret)"
+    }
+  ],
+  "C#5": [
+    {
+      "positions": [-1, 4, 6, 6, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C#5 power chord"
+    }
+  ],
+  "D5": [
+    {
+      "positions": [-1, 5, 7, 7, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D5 power chord"
+    },
+    {
+      "positions": [-1, -1, 0, 2, 3, -1],
+      "fingers": [0, 0, 0, 1, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open D5"
+    }
+  ],
+  "D#5": [
+    {
+      "positions": [-1, 6, 8, 8, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D#5 power chord"
+    }
+  ],
+  "Eb5": [
+    {
+      "positions": [-1, 6, 8, 8, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Eb5 power chord"
+    }
+  ],
+  "E5": [
+    {
+      "positions": [0, 2, 2, -1, -1, -1],
+      "fingers": [0, 1, 2, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open E5"
+    },
+    {
+      "positions": [-1, 7, 9, 9, -1, -1],
+      "fingers": [0, 1, 3, 4, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "E5 (7th fret)"
+    }
+  ],
+  "F5": [
+    {
+      "positions": [1, 3, 3, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "F5 power chord"
+    }
+  ],
+  "F#5": [
+    {
+      "positions": [2, 4, 4, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "F#5 power chord"
+    }
+  ],
+  "G5": [
+    {
+      "positions": [3, 5, 5, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G5 power chord"
+    },
+    {
+      "positions": [3, -1, 0, 0, -1, -1],
+      "fingers": [1, 0, 0, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open G5"
+    }
+  ],
+  "G#5": [
+    {
+      "positions": [4, 6, 6, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G#5 power chord"
+    }
+  ],
+  "Ab5": [
+    {
+      "positions": [4, 6, 6, -1, -1, -1],
+      "fingers": [1, 3, 4, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Ab5 power chord"
+    }
+  ],
+  "Adim": [
+    {
+      "positions": [-1, 0, 1, 2, 1, -1],
+      "fingers": [0, 0, 1, 3, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Adim"
     }
   ],
   "Bdim": [
@@ -526,6 +1407,49 @@
       "label": "Bdim"
     }
   ],
+  "C#dim": [
+    {
+      "positions": [-1, -1, 2, 3, 2, 3],
+      "fingers": [0, 0, 1, 2, 1, 3],
+      "barres": [{ "fromString": 4, "toString": 2, "fret": 2 }],
+      "baseFret": 1,
+      "label": "C#dim"
+    }
+  ],
+  "Ddim": [
+    {
+      "positions": [-1, -1, 0, 1, 3, 1],
+      "fingers": [0, 0, 0, 1, 3, 2],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Ddim"
+    }
+  ],
+  "Ebdim": [
+    {
+      "positions": [-1, -1, 1, 2, 1, 2],
+      "fingers": [0, 0, 1, 3, 2, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Ebdim"
+    }
+  ],
+  "Edim": [
+    {
+      "positions": [0, 1, 2, 0, -1, -1],
+      "fingers": [0, 1, 2, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Edim"
+    },
+    {
+      "positions": [-1, -1, 2, 3, 2, 0],
+      "fingers": [0, 0, 1, 3, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Edim (high strings)"
+    }
+  ],
   "F#dim": [
     {
       "positions": [2, -1, 1, 2, 1, -1],
@@ -535,13 +1459,31 @@
       "label": "F#dim"
     }
   ],
-  "C#dim": [
+  "Gdim": [
     {
-      "positions": [-1, -1, 2, 3, 2, 3],
-      "fingers": [0, 0, 1, 2, 1, 3],
+      "positions": [3, -1, 2, 3, 2, -1],
+      "fingers": [2, 0, 1, 3, 1, 0],
       "barres": [{ "fromString": 4, "toString": 2, "fret": 2 }],
       "baseFret": 1,
-      "label": "C#dim"
+      "label": "Gdim"
+    }
+  ],
+  "Abdim": [
+    {
+      "positions": [4, -1, 3, 4, 3, -1],
+      "fingers": [2, 0, 1, 3, 1, 0],
+      "barres": [{ "fromString": 4, "toString": 2, "fret": 3 }],
+      "baseFret": 1,
+      "label": "Abdim"
+    }
+  ],
+  "Bbdim": [
+    {
+      "positions": [-1, 1, 2, 3, 2, -1],
+      "fingers": [0, 1, 2, 4, 3, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Bbdim"
     }
   ],
   "Caug": [
@@ -560,6 +1502,383 @@
       "barres": [],
       "baseFret": 1,
       "label": "Open Eaug"
+    }
+  ],
+  "Aaug": [
+    {
+      "positions": [-1, 0, 3, 2, 2, 1],
+      "fingers": [0, 0, 4, 2, 3, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open Aaug"
+    }
+  ],
+  "Baug": [
+    {
+      "positions": [-1, 2, 1, 0, 0, 3],
+      "fingers": [0, 2, 1, 0, 0, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Baug"
+    }
+  ],
+  "Daug": [
+    {
+      "positions": [-1, -1, 0, 3, 3, 2],
+      "fingers": [0, 0, 0, 2, 3, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Daug"
+    }
+  ],
+  "Faug": [
+    {
+      "positions": [-1, -1, 3, 2, 2, 1],
+      "fingers": [0, 0, 4, 2, 3, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Faug"
+    },
+    {
+      "positions": [1, -1, 3, 2, 2, 1],
+      "fingers": [1, 0, 4, 3, 2, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Faug (with bass)"
+    }
+  ],
+  "Gaug": [
+    {
+      "positions": [3, -1, 5, 4, 4, 3],
+      "fingers": [1, 0, 4, 2, 3, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Gaug"
+    }
+  ],
+  "Bbaug": [
+    {
+      "positions": [-1, 1, 0, 3, 3, 2],
+      "fingers": [0, 1, 0, 3, 4, 2],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Bbaug"
+    }
+  ],
+  "C/G": [
+    {
+      "positions": [3, 3, 2, 0, 1, 0],
+      "fingers": [3, 4, 2, 0, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C/G"
+    }
+  ],
+  "C/E": [
+    {
+      "positions": [0, 3, 2, 0, 1, 0],
+      "fingers": [0, 3, 2, 0, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C/E"
+    }
+  ],
+  "D/F#": [
+    {
+      "positions": [2, 0, 0, 2, 3, 2],
+      "fingers": [1, 0, 0, 2, 4, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D/F#"
+    }
+  ],
+  "G/B": [
+    {
+      "positions": [-1, 2, 0, 0, 0, 3],
+      "fingers": [0, 1, 0, 0, 0, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G/B"
+    }
+  ],
+  "G/F#": [
+    {
+      "positions": [2, 2, 0, 0, 0, 3],
+      "fingers": [1, 2, 0, 0, 0, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G/F#"
+    }
+  ],
+  "Am/G": [
+    {
+      "positions": [3, 0, 2, 2, 1, 0],
+      "fingers": [4, 0, 3, 2, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Am/G"
+    }
+  ],
+  "Am/E": [
+    {
+      "positions": [0, 0, 2, 2, 1, 0],
+      "fingers": [0, 0, 2, 3, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Am/E"
+    }
+  ],
+  "Em/B": [
+    {
+      "positions": [-1, 2, 2, 0, 0, 0],
+      "fingers": [0, 2, 3, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Em/B"
+    }
+  ],
+  "Em/D": [
+    {
+      "positions": [-1, -1, 0, 0, 0, 0],
+      "fingers": [0, 0, 0, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Em/D (open)"
+    },
+    {
+      "positions": [-1, -1, 2, 0, 0, 0],
+      "fingers": [0, 0, 2, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Em/D (with D on D string)"
+    }
+  ],
+  "F/C": [
+    {
+      "positions": [-1, 3, 3, 2, 1, 1],
+      "fingers": [0, 3, 4, 2, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "F/C"
+    }
+  ],
+  "A/C#": [
+    {
+      "positions": [-1, 4, 2, 2, 2, 0],
+      "fingers": [0, 4, 1, 2, 3, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "A/C#"
+    }
+  ],
+  "A/E": [
+    {
+      "positions": [0, 0, 2, 2, 2, 0],
+      "fingers": [0, 0, 1, 2, 3, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "A/E"
+    }
+  ],
+  "Dm/A": [
+    {
+      "positions": [-1, 0, 0, 2, 3, 1],
+      "fingers": [0, 0, 0, 2, 3, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Dm/A"
+    }
+  ],
+  "E/G#": [
+    {
+      "positions": [4, 2, 2, 1, 0, 0],
+      "fingers": [4, 2, 3, 1, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "E/G#"
+    }
+  ],
+  "C9": [
+    {
+      "positions": [-1, 3, 2, 3, 3, 0],
+      "fingers": [0, 2, 1, 3, 4, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C9"
+    }
+  ],
+  "D9": [
+    {
+      "positions": [-1, -1, 0, 2, 1, 0],
+      "fingers": [0, 0, 0, 2, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D9 (open partial)"
+    },
+    {
+      "positions": [-1, 5, 4, 5, 5, 0],
+      "fingers": [0, 2, 1, 3, 4, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D9"
+    }
+  ],
+  "E9": [
+    {
+      "positions": [0, 2, 0, 1, 0, 2],
+      "fingers": [0, 2, 0, 1, 0, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Open E9"
+    }
+  ],
+  "G9": [
+    {
+      "positions": [3, 0, 0, 0, 0, 1],
+      "fingers": [3, 0, 0, 0, 0, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G9 (open)"
+    },
+    {
+      "positions": [3, 2, 0, 2, 0, 1],
+      "fingers": [3, 2, 0, 4, 0, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G9"
+    }
+  ],
+  "A9": [
+    {
+      "positions": [-1, 0, 2, 4, 2, 3],
+      "fingers": [0, 0, 1, 3, 1, 2],
+      "barres": [{ "fromString": 4, "toString": 2, "fret": 2 }],
+      "baseFret": 1,
+      "label": "A9"
+    },
+    {
+      "positions": [-1, 0, 2, 0, 2, 0],
+      "fingers": [0, 0, 1, 0, 2, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "A9 (simple open)"
+    }
+  ],
+  "C6": [
+    {
+      "positions": [-1, 3, 2, 2, 1, 0],
+      "fingers": [0, 4, 3, 2, 1, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "C6"
+    }
+  ],
+  "D6": [
+    {
+      "positions": [-1, -1, 0, 2, 0, 2],
+      "fingers": [0, 0, 0, 1, 0, 2],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D6"
+    }
+  ],
+  "E6": [
+    {
+      "positions": [0, 2, 2, 1, 2, 0],
+      "fingers": [0, 2, 3, 1, 4, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "E6"
+    }
+  ],
+  "F6": [
+    {
+      "positions": [1, -1, 0, 2, 1, 1],
+      "fingers": [1, 0, 0, 3, 2, 1],
+      "barres": [{ "fromString": 6, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "F6"
+    }
+  ],
+  "G6": [
+    {
+      "positions": [3, 2, 0, 0, 0, 0],
+      "fingers": [2, 1, 0, 0, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "G6"
+    }
+  ],
+  "A6": [
+    {
+      "positions": [-1, 0, 2, 2, 2, 2],
+      "fingers": [0, 0, 1, 1, 1, 1],
+      "barres": [{ "fromString": 4, "toString": 1, "fret": 2 }],
+      "baseFret": 1,
+      "label": "A6"
+    }
+  ],
+  "Am6": [
+    {
+      "positions": [-1, 0, 2, 2, 1, 2],
+      "fingers": [0, 0, 2, 3, 1, 4],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Am6"
+    }
+  ],
+  "Em6": [
+    {
+      "positions": [0, 2, 2, 0, 2, 0],
+      "fingers": [0, 1, 2, 0, 3, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Em6"
+    }
+  ],
+  "Dm6": [
+    {
+      "positions": [-1, -1, 0, 2, 0, 1],
+      "fingers": [0, 0, 0, 2, 0, 1],
+      "barres": [],
+      "baseFret": 1,
+      "label": "Dm6"
+    }
+  ],
+  "A7sus4": [
+    {
+      "positions": [-1, 0, 2, 0, 3, 0],
+      "fingers": [0, 0, 2, 0, 3, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "A7sus4"
+    }
+  ],
+  "D7sus4": [
+    {
+      "positions": [-1, -1, 0, 2, 1, 3],
+      "fingers": [0, 0, 0, 2, 1, 3],
+      "barres": [],
+      "baseFret": 1,
+      "label": "D7sus4"
+    }
+  ],
+  "E7sus4": [
+    {
+      "positions": [0, 2, 0, 2, 0, 0],
+      "fingers": [0, 2, 0, 3, 0, 0],
+      "barres": [],
+      "baseFret": 1,
+      "label": "E7sus4"
+    }
+  ],
+  "G7sus4": [
+    {
+      "positions": [3, 3, 0, 0, 1, 1],
+      "fingers": [3, 4, 0, 0, 1, 1],
+      "barres": [{ "fromString": 2, "toString": 1, "fret": 1 }],
+      "baseFret": 1,
+      "label": "G7sus4"
     }
   ]
 }

@@ -1,8 +1,44 @@
 // === Chord Builder — Song Timeline with Chord Row + Inline Step Grid ===
 
 const Timeline = (() => {
-  const COL_WIDTH_PX = 28;
+  let COL_WIDTH_PX = 28;
+  const COL_WIDTH_DEFAULT = 28;
+  const ZOOM_MIN = 10;
+  const ZOOM_MAX = 60;
+  const ZOOM_STEP = 4;
+
+  // Default row heights (match CSS :root)
+  const ROW_H_DEFAULT = 22;
+  const CHORD_ROW_H_DEFAULT = 52;
+  const CHORD_BLOCK_H_DEFAULT = 48;
+  const BEAT_ROW_H_DEFAULT = 18;
   const container = () => document.getElementById('timeline-sections');
+
+  // Smooth scroll state
+  let _scrollTarget = 0;
+  let _scrollWrapper = null;
+  let _scrollRAF = null;
+
+  function _startScrollLerp() {
+    function tick() {
+      if (!_scrollWrapper) { _scrollRAF = null; return; }
+      const current = _scrollWrapper.scrollLeft;
+      const diff = _scrollTarget - current;
+      if (Math.abs(diff) < 0.5) {
+        _scrollWrapper.scrollLeft = _scrollTarget;
+        _scrollRAF = null;
+        return;
+      }
+      _scrollWrapper.scrollLeft = current + diff * 0.15;
+      _scrollRAF = requestAnimationFrame(tick);
+    }
+    _scrollRAF = requestAnimationFrame(tick);
+  }
+
+  function _stopScrollLerp() {
+    if (_scrollRAF) { cancelAnimationFrame(_scrollRAF); _scrollRAF = null; }
+    _scrollWrapper = null;
+  }
 
   // Resize/drag state
   let resizeState = null;
@@ -49,9 +85,40 @@ const Timeline = (() => {
       showEmptyTimelineContextMenu(e.clientX, e.clientY);
     });
 
+    // Zoom buttons
+    document.getElementById('btn-zoom-in').addEventListener('click', () => setZoom(COL_WIDTH_PX + ZOOM_STEP));
+    document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(COL_WIDTH_PX - ZOOM_STEP));
+    applyZoom();
+
+    // Ctrl+scroll to zoom
+    document.getElementById('song-timeline').addEventListener('wheel', (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      setZoom(COL_WIDTH_PX + delta);
+    }, { passive: false });
+
     App.on('stateLoaded', render);
     App.on('keyModeChanged', render);
     App.on('timeSignatureChanged', render);
+  }
+
+  function setZoom(newWidth) {
+    COL_WIDTH_PX = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newWidth));
+    applyZoom();
+    render();
+  }
+
+  function applyZoom() {
+    const scale = COL_WIDTH_PX / COL_WIDTH_DEFAULT;
+    const root = document.documentElement;
+    root.style.setProperty('--row-h', Math.round(ROW_H_DEFAULT * scale) + 'px');
+    root.style.setProperty('--chord-row-h', Math.round(CHORD_ROW_H_DEFAULT * scale) + 'px');
+    root.style.setProperty('--chord-block-h', Math.round(CHORD_BLOCK_H_DEFAULT * scale) + 'px');
+    root.style.setProperty('--beat-row-h', Math.round(BEAT_ROW_H_DEFAULT * scale) + 'px');
+
+    const el = document.getElementById('zoom-level');
+    if (el) el.textContent = Math.round(scale * 100) + '%';
   }
 
   function setupGlobalListeners() {
@@ -161,10 +228,10 @@ const Timeline = (() => {
     div.className = 'timeline-section';
     div.dataset.sectionIndex = sIdx;
 
-    // Set width based on grid content + label column
+    // Grid width for inner elements (scroll-inner gets explicit width, section itself flexes)
     const totalCols = section.totalBeats * section.subdivisions;
     const gridWidth = totalCols * COL_WIDTH_PX;
-    div.style.width = (gridWidth + 44 + 4) + 'px'; // 44=label col, 4=endpoint handle
+    div.style.minWidth = 'min(' + (gridWidth + 44 + 4) + 'px, 100%)';
 
     div.appendChild(createSectionHeader(section, sIdx));
     div.appendChild(createSectionBody(section, sIdx));
@@ -483,9 +550,15 @@ const Timeline = (() => {
     });
     scrollArea.appendChild(gridEl);
 
-    // Playhead line
+    // Playhead lines — smooth (continuous) + step (per-column)
+    const playheadSmooth = document.createElement('div');
+    playheadSmooth.className = 'playhead-line playhead-smooth';
+    playheadSmooth.style.display = 'none';
+    playheadSmooth.dataset.sectionIndex = sIdx;
+    scrollArea.appendChild(playheadSmooth);
+
     const playhead = document.createElement('div');
-    playhead.className = 'playhead-line';
+    playhead.className = 'playhead-line playhead-step';
     playhead.style.display = 'none';
     playhead.dataset.sectionIndex = sIdx;
     scrollArea.appendChild(playhead);
@@ -1253,29 +1326,84 @@ const Timeline = (() => {
   // =============================================
   // Playhead
   // =============================================
-  function setPlayingColumn(sIdx, col) {
+  // Smooth playhead animation state
+  let _smoothRAF = null;
+  let _smoothStartX = 0;
+  let _smoothEndX = 0;
+  let _smoothStartTime = 0;
+  let _smoothDuration = 0;
+  let _smoothPlayhead = null;
+
+  function _animateSmoothPlayhead(timestamp) {
+    if (!_smoothPlayhead) { _smoothRAF = null; return; }
+    const elapsed = timestamp - _smoothStartTime;
+    const t = Math.min(elapsed / _smoothDuration, 1);
+    const x = _smoothStartX + (_smoothEndX - _smoothStartX) * t;
+    _smoothPlayhead.style.left = x + 'px';
+    if (t < 1) {
+      _smoothRAF = requestAnimationFrame(_animateSmoothPlayhead);
+    } else {
+      _smoothRAF = null;
+    }
+  }
+
+  function _stopSmoothPlayhead() {
+    if (_smoothRAF) { cancelAnimationFrame(_smoothRAF); _smoothRAF = null; }
+    _smoothPlayhead = null;
+  }
+
+  function setPlayingColumn(sIdx, col, colDurationMs) {
     document.querySelectorAll('.playhead-line').forEach(line => {
       line.style.display = 'none';
     });
-    if (sIdx < 0) return;
+    if (sIdx < 0) { _stopScrollLerp(); _stopSmoothPlayhead(); return; }
     const sectionEl = container().querySelectorAll('.timeline-section')[sIdx];
     if (!sectionEl) return;
-    const playhead = sectionEl.querySelector('.playhead-line');
-    if (playhead) {
-      playhead.style.display = 'block';
-      playhead.style.left = (col * COL_WIDTH_PX) + 'px';
 
-      // Auto-scroll to keep playhead visible
-      const timelinePanel = document.getElementById('song-timeline');
-      if (timelinePanel) {
-        const playheadRect = playhead.getBoundingClientRect();
-        const panelRect = timelinePanel.getBoundingClientRect();
-        if (playheadRect.left < panelRect.left || playheadRect.right > panelRect.right) {
-          timelinePanel.scrollLeft += playheadRect.left - panelRect.left - 100;
-        }
-        if (playheadRect.top < panelRect.top || playheadRect.bottom > panelRect.bottom) {
-          timelinePanel.scrollTop += playheadRect.top - panelRect.top - 50;
-        }
+    const stepHead = sectionEl.querySelector('.playhead-step');
+    const smoothHead = sectionEl.querySelector('.playhead-smooth');
+
+    if (stepHead) {
+      stepHead.style.display = 'block';
+      stepHead.style.left = (col * COL_WIDTH_PX) + 'px';
+    }
+
+    // Animate smooth playhead from current col to next col
+    if (smoothHead && colDurationMs) {
+      smoothHead.style.display = 'block';
+      _smoothPlayhead = smoothHead;
+      _smoothStartX = col * COL_WIDTH_PX;
+      _smoothEndX = (col + 1) * COL_WIDTH_PX;
+      _smoothStartTime = performance.now();
+      _smoothDuration = colDurationMs;
+      if (!_smoothRAF) _smoothRAF = requestAnimationFrame(_animateSmoothPlayhead);
+    }
+
+    // Auto-scroll to center playhead horizontally
+    const timelinePanel = document.getElementById('song-timeline');
+    const scrollWrapper = sectionEl.querySelector('.section-scroll-wrapper');
+
+    // Smooth scroll every bar (4 beats)
+    const section = App.state.sections[sIdx];
+    const subdivisions = section ? section.subdivisions : 2;
+    const colsPerBar = 4 * subdivisions;
+    if (col % colsPerBar === 0) {
+      if (scrollWrapper) {
+        const playheadLeft = col * COL_WIDTH_PX;
+        const wrapperWidth = scrollWrapper.clientWidth;
+        _scrollTarget = playheadLeft - (wrapperWidth / 2);
+        _scrollWrapper = scrollWrapper;
+        if (!_scrollRAF) _startScrollLerp();
+      }
+    }
+
+    // Smoothly keep section vertically visible in the timeline panel
+    if (timelinePanel && stepHead) {
+      const playheadRect = stepHead.getBoundingClientRect();
+      const panelRect = timelinePanel.getBoundingClientRect();
+      if (playheadRect.top < panelRect.top || playheadRect.bottom > panelRect.bottom) {
+        const target = timelinePanel.scrollTop + playheadRect.top - panelRect.top - (panelRect.height / 2);
+        timelinePanel.scrollTo({ top: target, behavior: 'smooth' });
       }
     }
   }
