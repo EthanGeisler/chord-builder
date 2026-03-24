@@ -72,7 +72,28 @@ const Timeline = (() => {
     moved: false,
   };
 
+  // Mobile detection
+  const _mobileQuery = window.matchMedia('(max-width: 768px)');
+  const MOBILE_COL_WIDTH = 40;
+
+  // Touch state for long-press selection
+  let _touchLongPressTimer = null;
+  let _touchSelecting = false;
+  let _touchStartCell = null;
+
+  function _isMobile() { return _mobileQuery.matches; }
+
+  function _applyMobileColWidth() {
+    if (_isMobile()) {
+      COL_WIDTH_PX = Math.max(COL_WIDTH_PX, MOBILE_COL_WIDTH);
+    }
+    applyZoom();
+  }
+
   function init() {
+    // Set mobile col width before first render
+    if (_isMobile()) COL_WIDTH_PX = MOBILE_COL_WIDTH;
+
     render();
     setupGlobalListeners();
 
@@ -103,6 +124,17 @@ const Timeline = (() => {
       const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
       setZoom(COL_WIDTH_PX + delta);
     }, { passive: false });
+
+    // Respond to orientation / breakpoint changes
+    _mobileQuery.addEventListener('change', () => {
+      if (_isMobile()) {
+        COL_WIDTH_PX = Math.max(COL_WIDTH_PX, MOBILE_COL_WIDTH);
+      } else {
+        if (COL_WIDTH_PX === MOBILE_COL_WIDTH) COL_WIDTH_PX = COL_WIDTH_DEFAULT;
+      }
+      applyZoom();
+      render();
+    });
 
     App.on('stateLoaded', render);
     App.on('keyModeChanged', render);
@@ -463,6 +495,37 @@ const Timeline = (() => {
       showChordRowContextMenu(e.clientX, e.clientY, sIdx, startBeat);
     });
 
+    // Mobile tap-to-place: show hint if chord is selected, click to place
+    if (_isMobile() && typeof Controls !== 'undefined' && Controls.getTouchSelectedChord()) {
+      chordRow.classList.add('touch-place-target');
+    }
+    chordRow.addEventListener('click', (e) => {
+      if (!_isMobile()) return;
+      if (e.target.closest('.chord-block')) return;
+      if (typeof Controls === 'undefined') return;
+      const chordName = Controls.getTouchSelectedChord();
+      if (!chordName) return;
+
+      const rect = chordRow.getBoundingClientRect();
+      const x = (e.clientX || (e.touches && e.touches[0].clientX) || 0) - rect.left + (scrollArea ? scrollArea.scrollLeft : 0);
+      const col = Math.floor(x / COL_WIDTH_PX);
+      const startBeat = Math.floor(col / section.subdivisions);
+      const beatsPerMeasure = App.getBeatsPerMeasure();
+      const nextChord = section.chords.filter(c => c.startBeat > startBeat).sort((a, b) => a.startBeat - b.startBeat)[0];
+      const maxBeforeNext = nextChord ? nextChord.startBeat - startBeat : Infinity;
+      const durationBeats = Math.min(beatsPerMeasure, section.totalBeats - startBeat, maxBeforeNext);
+
+      if (durationBeats <= 0) return;
+      if (hasOverlap(section.chords, startBeat, durationBeats, -1)) return;
+
+      section.chords.push({ chord: chordName, voicingIndex: 0, startBeat, durationBeats });
+      section.chords.sort((a, b) => a.startBeat - b.startBeat);
+      Controls.setTouchSelectedChord(null);
+      render();
+      App.emit('songChanged');
+      App.emit('chordPlaced', { sIdx, chord: chordName });
+    });
+
     scrollArea.appendChild(chordRow);
 
     // === Beat header row ===
@@ -557,6 +620,94 @@ const Timeline = (() => {
           }
         });
 
+        // Touch: tap to toggle, long-press to start selection, touchmove to extend
+        cell.addEventListener('touchstart', (e) => {
+          if (!_isMobile()) return;
+          const touch = e.touches[0];
+          _touchStartCell = { sIdx, rowIdx, col, key, row, section, x: touch.clientX, y: touch.clientY };
+          _touchSelecting = false;
+
+          _touchLongPressTimer = setTimeout(() => {
+            // Long-press: enter selection mode
+            _touchSelecting = true;
+            cell.classList.add('touch-selecting');
+            selectState = {
+              sIdx, cells: new Set(), active: true,
+              anchorRow: rowIdx, anchorCol: col,
+              currentRow: rowIdx, currentCol: col,
+              moved: false,
+            };
+            updateMarqueeVisual(sIdx, section);
+          }, 500);
+        }, { passive: true });
+
+        cell.addEventListener('touchmove', (e) => {
+          if (!_touchStartCell) return;
+          // Cancel long-press if finger moved too far (allow scrolling)
+          const touch = e.touches[0];
+          const dx = Math.abs(touch.clientX - _touchStartCell.x);
+          const dy = Math.abs(touch.clientY - _touchStartCell.y);
+          if (!_touchSelecting && (dx > 10 || dy > 10)) {
+            clearTimeout(_touchLongPressTimer);
+            _touchStartCell = null;
+            return;
+          }
+          if (_touchSelecting) {
+            e.preventDefault();
+            // Extend selection to cell under touch
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el && el.classList.contains('step-grid-cell')) {
+              const r = parseInt(el.dataset.rowIdx, 10);
+              const c = parseInt(el.dataset.col, 10);
+              const s = parseInt(el.dataset.sIdx, 10);
+              if (s === selectState.sIdx && (r !== selectState.currentRow || c !== selectState.currentCol)) {
+                selectState.moved = true;
+                selectState.currentRow = r;
+                selectState.currentCol = c;
+                updateMarqueeVisual(selectState.sIdx, App.state.sections[selectState.sIdx]);
+              }
+            }
+          }
+        }, { passive: false });
+
+        cell.addEventListener('touchend', (e) => {
+          clearTimeout(_touchLongPressTimer);
+          if (!_touchStartCell) return;
+          if (_touchSelecting) {
+            // Finalize selection
+            _touchSelecting = false;
+            selectState.active = false;
+            _touchStartCell = null;
+            return;
+          }
+          // Simple tap: toggle cell
+          const tc = _touchStartCell;
+          _touchStartCell = null;
+          e.preventDefault();
+
+          // Strum row toggle (same as mousedown single-click logic)
+          if (tc.row.id === 'alt-bass') {
+            const rows = Tablature.GRID_ROWS;
+            const stringRows = rows.filter(r => r.type === 'string');
+            const anyActive = stringRows.some(r => tc.section.gridState[r.id + ':' + tc.col]);
+            const v = (tc.col % tc.section.subdivisions === 0) ? 1.0 : 0.7;
+            stringRows.forEach(r => {
+              const k = r.id + ':' + tc.col;
+              if (anyActive) delete tc.section.gridState[k];
+              else tc.section.gridState[k] = v;
+            });
+          } else {
+            if (tc.section.gridState[tc.key]) {
+              delete tc.section.gridState[tc.key];
+            } else {
+              tc.section.gridState[tc.key] = (tc.col % tc.section.subdivisions === 0) ? 1.0 : 0.7;
+            }
+          }
+          clearSelection();
+          render();
+          App.emit('songChanged');
+        });
+
         rowEl.appendChild(cell);
       }
 
@@ -614,7 +765,7 @@ const Timeline = (() => {
     // Chord name
     const nameEl = document.createElement('div');
     nameEl.className = 'chord-block-name';
-    nameEl.textContent = chord.chord;
+    nameEl.textContent = Theory.displayChord(chord.chord);
     block.appendChild(nameEl);
 
     // Mini diagram container

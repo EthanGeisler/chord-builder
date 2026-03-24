@@ -375,6 +375,41 @@ button:active { transform: scale(0.97); }
   background: var(--accent-light);
 }
 
+#btn-templates {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 600;
+  position: relative;
+}
+
+#btn-templates:hover {
+  background: var(--bg-card-hover);
+}
+
+.template-picker {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.template-picker-item {
+  padding: 8px 14px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.template-picker-item:hover {
+  background: var(--highlight);
+  color: var(--accent-light);
+}
+
 /* Sections container — horizontal flow with wrapping */
 #timeline-sections {
   display: flex;
@@ -1693,4 +1728,379 @@ button:active { transform: scale(0.97); }
   line-height: 1.5;
   max-height: 150px;
   overflow-y: auto;
+}
+
+/* === Mobile Tab Navigation === */
+#mobile-nav {
+  display: none;
+}
+
+/* Mobile touch placement indicator */
+.palette-chord.touch-selected {
+  outline: 3px solid var(--success);
+  outline-offset: -1px;
+  background: rgba(78, 204, 163, 0.15);
+}
+
+.chord-row.touch-place-target {
+  background: rgba(78, 204, 163, 0.15);
+  cursor: pointer;
+}
+
+.chord-row.touch-place-target::after {
+  content: 'Tap to place chord';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  color: var(--success);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Long-press selection feedback */
+.step-grid-cell.touch-selecting {
+  background: rgba(78, 204, 163, 0.25) !important;
+  outline: 2px solid var(--success);
+  outline-offset: -2px;
+}
+
+/* === Tablet: 769px - 1024px === */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #app-main {
+    grid-template-columns: 180px 1fr 220px;
+  }
+
+  #chord-palette {
+    padding: 8px;
+  }
+
+  .palette-chord {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+
+  #chord-detail {
+    padding: 8px;
+  }
+
+  #detail-diagram svg {
+    max-width: 180px;
+  }
+
+  .voicing-thumb {
+    width: 58px;
+    height: 63px;
+  }
+
+  .section-header {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .section-controls {
+    flex-wrap: wrap;
+  }
+}
+
+/* === Mobile: max-width 768px === */
+@media (max-width: 768px) {
+  /* Show mobile nav */
+  #mobile-nav {
+    display: flex;
+    background: var(--bg-surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0;
+    gap: 0;
+  }
+
+  .mobile-tab {
+    flex: 1;
+    padding: 10px 4px;
+    background: var(--bg-surface);
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: color 0.15s, border-color 0.15s;
+    border-radius: 0;
+  }
+
+  .mobile-tab:hover {
+    color: var(--text);
+    background: var(--bg-surface);
+    border-bottom-color: var(--border);
+  }
+
+  .mobile-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--bg-surface);
+  }
+
+  /* Header: wrap, hide h1, compact */
+  #controls-bar {
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    gap: 6px;
+    min-height: auto;
+  }
+
+  #controls-bar h1 {
+    display: none;
+  }
+
+  .controls-left,
+  .controls-center,
+  .controls-right {
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .controls-left {
+    order: 2;
+    width: 100%;
+  }
+
+  .controls-center {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .controls-right {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .control-group label {
+    font-size: 0.65rem;
+  }
+
+  select, input[type="number"] {
+    padding: 4px 4px;
+    font-size: 0.8rem;
+  }
+
+  button {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+
+  /* Single column layout */
+  #app-main {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+
+  /* Hide inactive panels on mobile */
+  #chord-palette,
+  #song-timeline,
+  #chord-detail {
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    border: none;
+  }
+
+  #chord-palette.mobile-active,
+  #song-timeline.mobile-active,
+  #chord-detail.mobile-active {
+    display: block;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Remove panel borders on mobile */
+  #chord-palette {
+    border-right: none;
+  }
+
+  #chord-detail {
+    border-left: none;
+  }
+
+  /* Timeline full width */
+  #song-timeline {
+    padding: 8px;
+  }
+
+  .timeline-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Section header compact */
+  .section-header {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .section-header .section-name {
+    width: 80px;
+    font-size: 0.8rem;
+  }
+
+  .section-controls {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .section-controls button {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+  }
+
+  .section-controls select {
+    font-size: 0.7rem;
+  }
+
+  /* Chord detail adjustments for mobile */
+  #detail-diagram svg {
+    max-width: 200px;
+  }
+
+  .voicing-thumb {
+    width: 60px;
+    height: 65px;
+  }
+
+  /* Chord creator modal responsive */
+  .chord-creator-modal {
+    min-width: auto;
+    max-width: 95vw;
+    width: 95vw;
+  }
+
+  .creator-body {
+    flex-direction: column;
+  }
+
+  .creator-preview {
+    width: 100%;
+    min-height: 160px;
+  }
+
+  /* Importer modal responsive */
+  .importer-modal {
+    min-width: auto;
+    max-width: 95vw;
+    width: 95vw;
+  }
+
+  /* Modal responsive */
+  .modal {
+    min-width: auto;
+    max-width: 90vw;
+    width: 90vw;
+  }
+
+  /* Allow body scroll for overflowing header */
+  html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Timeline sections stack vertically on mobile */
+  #timeline-sections {
+    flex-direction: column;
+  }
+
+  .timeline-section {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+/* === Share Modal === */
+.share-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.share-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  min-width: 400px;
+  max-width: 600px;
+  width: 90%;
+}
+
+.share-modal h3 {
+  margin-bottom: 12px;
+  color: var(--accent-light);
+}
+
+.share-warning {
+  background: rgba(245, 166, 35, 0.15);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.share-url-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.share-modal-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.share-btn-copy, .share-btn-close {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.share-btn-copy {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.share-btn-copy:hover {
+  background: var(--accent-light);
+}
+
+.share-btn-close {
+  background: var(--bg-surface);
+  color: var(--text);
+}
+
+.share-btn-close:hover {
+  background: var(--bg-card-hover);
 }

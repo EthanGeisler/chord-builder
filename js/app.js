@@ -22,6 +22,7 @@ const App = (() => {
     projectName: 'Untitled',
     customVoicings: [],
     customArpeggios: [],
+    enharmonicMode: 'sharp',
   };
 
   // Event bus
@@ -91,6 +92,7 @@ const App = (() => {
       projectName: state.projectName,
       customVoicings: state.customVoicings,
       customArpeggios: state.customArpeggios,
+      enharmonicMode: state.enharmonicMode,
     });
   }
 
@@ -174,6 +176,7 @@ const App = (() => {
         projectName: data.projectName || 'Untitled',
         customVoicings: data.customVoicings || [],
         customArpeggios: data.customArpeggios || [],
+        enharmonicMode: data.enharmonicMode || 'sharp',
       });
 
       // Re-register custom voicings with ChordsDB

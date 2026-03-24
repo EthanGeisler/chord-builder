@@ -2,6 +2,33 @@
 
 const Theory = (() => {
   const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const KEYS_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+  const ENHARMONIC_MAP = { 'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb' };
+  const ENHARMONIC_MAP_REVERSE = { 'Db':'C#', 'Eb':'D#', 'Gb':'F#', 'Ab':'G#', 'Bb':'A#' };
+
+  // Display a note using current enharmonic mode
+  function displayNote(note) {
+    if (App.state.enharmonicMode === 'flat' && ENHARMONIC_MAP[note]) {
+      return ENHARMONIC_MAP[note];
+    }
+    return note;
+  }
+
+  // Display a chord name using current enharmonic mode
+  function displayChord(chordName) {
+    if (!chordName) return chordName;
+    const rootMatch = chordName.match(/^([A-G]#?)(.*)/);
+    if (!rootMatch) return chordName;
+    return displayNote(rootMatch[1]) + rootMatch[2];
+  }
+
+  // Convert a displayed note back to internal sharp representation
+  function internalNote(note) {
+    if (ENHARMONIC_MAP_REVERSE[note]) {
+      return ENHARMONIC_MAP_REVERSE[note];
+    }
+    return note;
+  }
 
   const MODES = [
     { name: 'Major (Ionian)', value: 'major', tonal: 'major' },
@@ -305,6 +332,12 @@ const Theory = (() => {
 
   return {
     KEYS,
+    KEYS_FLAT,
+    ENHARMONIC_MAP,
+    ENHARMONIC_MAP_REVERSE,
+    displayNote,
+    displayChord,
+    internalNote,
     MODES,
     getScaleNotes,
     getDiatonicChords,

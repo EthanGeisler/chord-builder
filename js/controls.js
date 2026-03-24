@@ -2,15 +2,23 @@
 
 const Controls = (() => {
 
+  // Track mobile touch-selected chord for tap-to-place
+  let _touchSelectedChord = null;
+  const _mobileQuery = window.matchMedia('(max-width: 768px)');
+
   function init() {
     setupKeySelect();
     setupModeSelect();
     setupCapoSelect();
+    setupEnharmonicToggle();
     setupBPM();
     setupTimeSig();
+    setupMobileTabs();
     renderPalette();
 
     App.on('stateLoaded', () => {
+      document.getElementById('enharmonic-toggle').value = App.state.enharmonicMode;
+      rebuildKeySelectOptions();
       document.getElementById('key-select').value = App.state.key;
       document.getElementById('mode-select').value = App.state.mode;
       document.getElementById('capo-select').value = App.state.capo;
@@ -36,12 +44,41 @@ const Controls = (() => {
     });
   }
 
+  function rebuildKeySelectOptions() {
+    const sel = document.getElementById('key-select');
+    const currentVal = sel.value || App.state.key;
+    sel.innerHTML = '';
+    Theory.KEYS.forEach(key => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = Theory.displayNote(key);
+      sel.appendChild(opt);
+    });
+    sel.value = currentVal;
+  }
+
+  function setupEnharmonicToggle() {
+    const sel = document.getElementById('enharmonic-toggle');
+    sel.value = App.state.enharmonicMode;
+    sel.addEventListener('change', () => {
+      App.state.enharmonicMode = sel.value;
+      rebuildKeySelectOptions();
+      document.getElementById('key-select').value = App.state.key;
+      renderPalette();
+      if (App.state.selectedChord) {
+        showChordDetail(App.state.selectedChord);
+      }
+      App.emit('songChanged');
+      App.emit('keyModeChanged');
+    });
+  }
+
   function setupKeySelect() {
     const sel = document.getElementById('key-select');
     Theory.KEYS.forEach(key => {
       const opt = document.createElement('option');
       opt.value = key;
-      opt.textContent = key;
+      opt.textContent = Theory.displayNote(key);
       sel.appendChild(opt);
     });
     sel.value = App.state.key;
@@ -161,7 +198,7 @@ const Controls = (() => {
 
       const toggle = document.createElement('button');
       toggle.className = 'palette-group-toggle';
-      toggle.innerHTML = `<span>${letter}</span><span class="toggle-arrow">\u25BC</span>`;
+      toggle.innerHTML = `<span>${Theory.displayNote(letter)}</span><span class="toggle-arrow">\u25BC</span>`;
       toggle.addEventListener('click', () => {
         const wasCollapsed = groupDiv.classList.contains('collapsed');
         if (wasCollapsed) {
@@ -186,7 +223,7 @@ const Controls = (() => {
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'chord-name';
-        nameSpan.textContent = variant;
+        nameSpan.textContent = Theory.displayChord(variant);
 
         const numeralSpan = document.createElement('span');
         numeralSpan.className = 'chord-numeral';
@@ -206,8 +243,14 @@ const Controls = (() => {
         el.addEventListener('click', () => {
           App.state.selectedChord = variant;
           App.state.selectedVoicingIndex = 0;
-          App.emit('chordSelected', variant);
-          showChordDetail(variant);
+          if (_mobileQuery.matches) {
+            // Mobile: tap-to-select for placement, then switch to timeline
+            setTouchSelectedChord(variant);
+            switchToPanel('song-timeline');
+          } else {
+            App.emit('chordSelected', variant);
+            showChordDetail(variant);
+          }
           if (typeof Audio !== 'undefined' && Audio.playChord) {
             Audio.playChord(variant);
           }
@@ -316,7 +359,7 @@ const Controls = (() => {
   }
 
   function showChordDetail(chordName) {
-    document.getElementById('detail-chord-name').textContent = chordName;
+    document.getElementById('detail-chord-name').textContent = Theory.displayChord(chordName);
 
     const diagramContainer = document.getElementById('detail-diagram');
     diagramContainer.innerHTML = '';
@@ -405,7 +448,7 @@ const Controls = (() => {
       const chip = document.createElement('div');
       chip.className = 'suggestion-chip';
       chip.innerHTML = `
-        <span class="chip-name">${s.chord}</span>
+        <span class="chip-name">${Theory.displayChord(s.chord)}</span>
         <span class="chip-reason">${s.reason}</span>
       `;
 
@@ -447,5 +490,86 @@ const Controls = (() => {
     paletteContainer.insertBefore(sugGroup, paletteContainer.firstChild);
   }
 
-  return { init, renderPalette, showChordDetail, renderCustomVoicings };
+  function setupMobileTabs() {
+    const nav = document.getElementById('mobile-nav');
+    if (!nav) return;
+
+    const tabs = nav.querySelectorAll('.mobile-tab');
+    const panels = {
+      'chord-palette': document.getElementById('chord-palette'),
+      'song-timeline': document.getElementById('song-timeline'),
+      'chord-detail': document.getElementById('chord-detail'),
+    };
+
+    function activatePanel(panelId) {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.panel === panelId));
+      Object.entries(panels).forEach(([id, el]) => {
+        el.classList.toggle('mobile-active', id === panelId);
+      });
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => activatePanel(tab.dataset.panel));
+    });
+
+    // Default: Timeline active on mobile
+    function applyMobileState() {
+      if (_mobileQuery.matches) {
+        // Ensure one panel is active
+        const anyActive = Object.values(panels).some(p => p.classList.contains('mobile-active'));
+        if (!anyActive) activatePanel('song-timeline');
+      } else {
+        // Desktop: remove mobile-active classes (CSS handles layout)
+        Object.values(panels).forEach(p => p.classList.remove('mobile-active'));
+      }
+    }
+
+    _mobileQuery.addEventListener('change', applyMobileState);
+    applyMobileState();
+
+    // When a chord is selected on mobile, switch to detail tab
+    App.on('chordSelected', () => {
+      if (_mobileQuery.matches) {
+        activatePanel('chord-detail');
+      }
+    });
+  }
+
+  function setTouchSelectedChord(chord) {
+    _touchSelectedChord = chord;
+    // Highlight selected chord in palette
+    document.querySelectorAll('.palette-chord.touch-selected').forEach(el => {
+      el.classList.remove('touch-selected');
+    });
+    if (chord) {
+      const el = document.querySelector(`.palette-chord[data-chord="${chord}"]`);
+      if (el) el.classList.add('touch-selected');
+    }
+  }
+
+  function getTouchSelectedChord() {
+    return _touchSelectedChord;
+  }
+
+  function isMobile() {
+    return _mobileQuery.matches;
+  }
+
+  function switchToPanel(panelId) {
+    if (!_mobileQuery.matches) return;
+    const nav = document.getElementById('mobile-nav');
+    if (!nav) return;
+    const tabs = nav.querySelectorAll('.mobile-tab');
+    const panels = {
+      'chord-palette': document.getElementById('chord-palette'),
+      'song-timeline': document.getElementById('song-timeline'),
+      'chord-detail': document.getElementById('chord-detail'),
+    };
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.panel === panelId));
+    Object.entries(panels).forEach(([id, el]) => {
+      el.classList.toggle('mobile-active', id === panelId);
+    });
+  }
+
+  return { init, renderPalette, showChordDetail, renderCustomVoicings, isMobile, getTouchSelectedChord, setTouchSelectedChord, switchToPanel };
 })();

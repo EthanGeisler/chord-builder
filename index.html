@@ -24,6 +24,13 @@
         <select id="capo-select"></select>
       </div>
       <div class="control-group">
+        <label for="enharmonic-toggle">♭/♯</label>
+        <select id="enharmonic-toggle">
+          <option value="sharp">Sharps (C#, F#)</option>
+          <option value="flat">Flats (Db, Gb)</option>
+        </select>
+      </div>
+      <div class="control-group">
         <label for="instrument-select">Sound</label>
         <select id="instrument-select">
           <option value="acoustic">Acoustic</option>
@@ -66,8 +73,18 @@
       <button id="btn-import">Import</button>
       <input type="file" id="import-file" accept=".json" style="display:none">
       <button id="btn-import-tab" class="btn-import-tab">Import Tab</button>
+      <button id="btn-export-midi">MIDI</button>
+      <button id="btn-export-wav">WAV</button>
+      <button id="btn-share">Share</button>
     </div>
   </header>
+
+  <!-- Mobile Tab Navigation -->
+  <nav id="mobile-nav" class="mobile-only">
+    <button class="mobile-tab" data-panel="chord-palette">Chords</button>
+    <button class="mobile-tab active" data-panel="song-timeline">Timeline</button>
+    <button class="mobile-tab" data-panel="chord-detail">Detail</button>
+  </nav>
 
   <!-- Main 3-Panel Layout -->
   <main id="app-main">
@@ -87,6 +104,7 @@
           <button id="btn-zoom-in" title="Zoom in (Ctrl+Scroll)">+</button>
         </div>
         <button id="btn-add-section">+ Add Section</button>
+        <button id="btn-templates">Templates</button>
       </div>
       <div id="timeline-sections"></div>
     </section>
@@ -123,12 +141,16 @@
   <script src="js/chords-db.js"></script>
   <script src="js/diagrams.js"></script>
   <script src="js/tablature.js"></script>
+  <script src="js/templates.js"></script>
   <script src="js/chord-creator.js"></script>
   <script src="js/timeline.js?v=5"></script>
   <script src="js/controls.js"></script>
   <script src="js/history.js"></script>
   <script src="js/audio.js?v=2"></script>
+  <script src="js/midi-export.js"></script>
+  <script src="js/audio-export.js"></script>
   <script src="js/importer.js?v=4"></script>
+  <script src="js/sharing.js"></script>
   <script src="js/storage.js?v=2"></script>
 </body>
 </html>

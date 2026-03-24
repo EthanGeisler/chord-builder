@@ -5,9 +5,11 @@ const Storage = (() => {
   const PROJECTS_KEY = 'chord-builder-projects';
   const BACKUP_URL = 'http://localhost:3001';
 
-  function init() {
-    // Try to restore autosave
-    restoreAutoSave();
+  function init(opts) {
+    // Try to restore autosave (skip if loaded from shared URL hash)
+    if (!(opts && opts.skipRestore)) {
+      restoreAutoSave();
+    }
 
     // Auto-save on any change
     App.on('songChanged', autoSave);
@@ -183,17 +185,24 @@ const Storage = (() => {
   // Load chord voicings database
   await ChordsDB.load();
 
-  // Initialize default song if no autosave
-  if (!App.state.sections || App.state.sections.length === 0) {
+  // Check for shared URL hash BEFORE autosave restore
+  const loadedFromHash = await Sharing.checkHash();
+
+  // Initialize default song if no autosave and no hash loaded
+  if (!loadedFromHash && (!App.state.sections || App.state.sections.length === 0)) {
     App.initDefaultSong();
   }
 
   // Initialize all modules
   Controls.init();
+  Templates.init();
   Timeline.init();
   AudioEngine.init();
+  MidiExport.init();
+  AudioExport.init();
   Importer.init();
-  Storage.init();
+  Sharing.init();
+  Storage.init({ skipRestore: loadedFromHash });
   History.init();
 
   console.log('Chord Builder initialized.');
