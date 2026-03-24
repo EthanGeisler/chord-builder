@@ -194,6 +194,7 @@ const Storage = (() => {
   AudioEngine.init();
   Importer.init();
   Storage.init();
+  History.init();
 
   console.log('Chord Builder initialized.');
 })();

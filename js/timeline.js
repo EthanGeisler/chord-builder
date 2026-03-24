@@ -53,6 +53,9 @@ const Timeline = (() => {
   // Clipboard for grid cell (tab pattern) copy/paste
   let gridClipboard = null; // { data: {"rowId:colOffset": vel}, rowSpan, colSpan }
 
+  // Clipboard for tab pattern copy/paste (gridState only, across sections)
+  let tabClipboard = null; // { gridState: {...}, subdivisions, totalBeats }
+
   // Clipboard for section copy/paste
   let sectionClipboard = null; // deep-cloned section object
   let selectedSectionIdx = -1; // currently selected section index
@@ -537,11 +540,11 @@ const Timeline = (() => {
           updateMarqueeVisual(sIdx, section);
         });
 
-        // Right-click: context menu for selected cells, or remove single cell
+        // Right-click: context menu for selected cells or paste, or remove single cell
         cell.addEventListener('contextmenu', (e) => {
           e.preventDefault();
-          // If cells are selected, show grid context menu
-          if (selectState.cells.size > 0 && selectState.sIdx === sIdx) {
+          // Show grid context menu if cells are selected in this section OR clipboard has data to paste
+          if ((selectState.cells.size > 0 && selectState.sIdx === sIdx) || gridClipboard) {
             showGridContextMenu(e, sIdx, section);
             return;
           }
@@ -966,11 +969,10 @@ const Timeline = (() => {
     const totalCols = section.totalBeats * section.subdivisions;
 
     for (const [offsetKey, entry] of Object.entries(gridClipboard.data)) {
-      const [rowOffset, colOffset] = offsetKey.split(':').map(Number);
-      const destRowIdx = targetRowIdx + rowOffset;
+      const colOffset = parseInt(offsetKey.split(':')[1], 10);
       const destCol = targetCol + colOffset;
-      if (destRowIdx >= rows.length || destCol >= totalCols) continue;
-      const destKey = rows[destRowIdx].id + ':' + destCol;
+      if (destCol >= totalCols || destCol < 0) continue;
+      const destKey = entry.rowId + ':' + destCol;
       section.gridState[destKey] = entry.vel;
     }
     clearSelection();
@@ -985,11 +987,14 @@ const Timeline = (() => {
     menu.style.left = e.clientX + 'px';
     menu.style.top = e.clientY + 'px';
 
+    const hasSelection = selectState.cells.size > 0 && selectState.sIdx === sIdx;
+
     // Copy
     const copyItem = document.createElement('div');
-    copyItem.className = 'context-menu-item';
+    copyItem.className = 'context-menu-item' + (!hasSelection ? ' disabled' : '');
     copyItem.textContent = 'Copy Pattern';
     copyItem.addEventListener('click', () => {
+      if (!hasSelection) { menu.remove(); return; }
       copyGridSelection(sIdx, section);
       menu.remove();
     });
@@ -1008,9 +1013,10 @@ const Timeline = (() => {
 
     // Delete
     const deleteItem = document.createElement('div');
-    deleteItem.className = 'context-menu-item';
+    deleteItem.className = 'context-menu-item' + (!hasSelection ? ' disabled' : '');
     deleteItem.textContent = 'Delete';
     deleteItem.addEventListener('click', () => {
+      if (!hasSelection) { menu.remove(); return; }
       for (const key of selectState.cells) {
         delete section.gridState[key];
       }
@@ -1659,6 +1665,57 @@ const Timeline = (() => {
     }
   }
 
+  function copyTabPattern(sIdx) {
+    const section = App.state.sections[sIdx];
+    if (!section) return;
+    tabClipboard = {
+      gridState: { ...section.gridState },
+      subdivisions: section.subdivisions,
+      totalBeats: section.totalBeats,
+    };
+    // Flash grid area to confirm
+    const sectionEl = container().querySelectorAll('.timeline-section')[sIdx];
+    if (sectionEl) {
+      const grid = sectionEl.querySelector('.step-grid');
+      if (grid) {
+        grid.style.outline = '2px solid var(--success)';
+        setTimeout(() => { grid.style.outline = ''; }, 300);
+      }
+    }
+  }
+
+  function pasteTabPattern(sIdx) {
+    if (!tabClipboard) return;
+    const section = App.state.sections[sIdx];
+    if (!section) return;
+
+    const srcSubs = tabClipboard.subdivisions;
+    const dstSubs = section.subdivisions;
+    const dstTotalCols = section.totalBeats * dstSubs;
+
+    // Clear existing grid
+    section.gridState = {};
+
+    // Paste, rescaling columns if subdivisions differ
+    for (const [key, vel] of Object.entries(tabClipboard.gridState)) {
+      const [rowId, colStr] = key.split(':');
+      let col = parseInt(colStr, 10);
+
+      if (srcSubs !== dstSubs) {
+        // Convert: srcCol is at beat (col / srcSubs), map to dstCol
+        const beat = col / srcSubs;
+        col = Math.round(beat * dstSubs);
+      }
+
+      if (col < dstTotalCols) {
+        section.gridState[rowId + ':' + col] = vel;
+      }
+    }
+
+    render();
+    App.emit('songChanged');
+  }
+
   function showSectionContextMenu(x, y, sIdx) {
     document.querySelectorAll('.context-menu').forEach(m => m.remove());
 
@@ -1687,6 +1744,31 @@ const Timeline = (() => {
       menu.remove();
     });
     menu.appendChild(pasteItem);
+
+    const sep0 = document.createElement('div');
+    sep0.className = 'context-menu-separator';
+    menu.appendChild(sep0);
+
+    const copyTabItem = document.createElement('div');
+    copyTabItem.className = 'context-menu-item';
+    copyTabItem.textContent = 'Copy Tab Pattern';
+    copyTabItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyTabPattern(sIdx);
+      menu.remove();
+    });
+    menu.appendChild(copyTabItem);
+
+    const pasteTabItem = document.createElement('div');
+    pasteTabItem.className = 'context-menu-item' + (!tabClipboard ? ' disabled' : '');
+    pasteTabItem.textContent = 'Paste Tab Pattern';
+    pasteTabItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!tabClipboard) return;
+      pasteTabPattern(sIdx);
+      menu.remove();
+    });
+    menu.appendChild(pasteTabItem);
 
     const sep = document.createElement('div');
     sep.className = 'context-menu-separator';
