@@ -330,6 +330,99 @@ const Theory = (() => {
     return { key: bestKey, mode: bestMode, confidence: bestScore };
   }
 
+  // Classify a chord's harmonic function within a key
+  function classifyChordFunction(key, mode, chordName) {
+    const degree = findDegree(key, mode, chordName);
+    if (degree) {
+      if ([1, 3, 6].includes(degree)) return 'tonic';
+      if ([2, 4].includes(degree)) return 'subdominant';
+      if ([5, 7].includes(degree)) return 'dominant';
+    }
+    // Check parallel key (borrowed chord / modal interchange)
+    const parallelMode = mode === 'minor' ? 'major' : 'minor';
+    const parallelDegree = findDegree(key, parallelMode, chordName);
+    if (parallelDegree) return 'borrowed';
+    return 'chromatic';
+  }
+
+  // Detect known progression patterns from an array of degree numbers
+  function detectProgressionPattern(degrees) {
+    const KNOWN_PATTERNS = [
+      { degrees: [1,5,6,4], name: 'I-V-vi-IV (Pop)' },
+      { degrees: [1,4,5,4], name: 'I-IV-V-IV (Folk)' },
+      { degrees: [6,4,1,5], name: 'vi-IV-I-V (Pop variant)' },
+      { degrees: [2,5,1], name: 'ii-V-I (Jazz)' },
+      { degrees: [1,4,5], name: 'I-IV-V (Blues/Rock)' },
+      { degrees: [1,6,4,5], name: 'I-vi-IV-V (50s)' },
+      { degrees: [1,5,6,3,4,1,4,5], name: 'Canon progression' },
+      { degrees: [1,7,6,5], name: 'Andalusian cadence' },
+    ];
+
+    for (const pattern of KNOWN_PATTERNS) {
+      const pLen = pattern.degrees.length;
+      if (degrees.length < pLen) continue;
+      // Check exact match
+      if (degrees.length === pLen && degrees.every((d, i) => d === pattern.degrees[i])) {
+        return pattern.name;
+      }
+      // Check circular rotations
+      for (let rot = 0; rot < pLen; rot++) {
+        const rotated = [...pattern.degrees.slice(rot), ...pattern.degrees.slice(0, rot)];
+        if (degrees.length === pLen && degrees.every((d, i) => d === rotated[i])) {
+          return pattern.name + ' (rotated)';
+        }
+      }
+    }
+    return null;
+  }
+
+  // Get diatonic chords of the parallel key (same root, opposite major/minor)
+  function getParallelChords(key, mode) {
+    const parallelMode = mode === 'minor' ? 'major' : 'minor';
+    return getDiatonicChords(key, parallelMode);
+  }
+
+  // Get tritone substitution for a chord (root + 6 semitones, dom7 quality)
+  function getTritoneSubstitution(key, mode, chordName) {
+    const fn = classifyChordFunction(key, mode, chordName);
+    if (fn !== 'dominant') return null;
+    const root = chordName.replace(/(m7b5|maj7|m7|dim|aug|7|m|sus2|sus4|add9)$/, '');
+    const rootIdx = KEYS.indexOf(root);
+    if (rootIdx < 0) return null;
+    const tritonRoot = KEYS[(rootIdx + 6) % 12];
+    return tritonRoot + '7';
+  }
+
+  // Get relative swap: major→relative minor, minor→relative major
+  function getRelativeSwap(chordName) {
+    const root = chordName.replace(/(m7b5|maj7|m7|dim|aug|7|m|sus2|sus4|add9)$/, '');
+    const suffix = chordName.slice(root.length);
+    const rootIdx = KEYS.indexOf(root);
+    if (rootIdx < 0) return null;
+    // Check if minor
+    if (suffix === 'm' || suffix === 'm7') {
+      // Relative major: root + 3 semitones
+      const newRoot = KEYS[(rootIdx + 3) % 12];
+      return suffix === 'm7' ? newRoot + 'maj7' : newRoot;
+    }
+    // Major chord: relative minor: root - 3 semitones
+    if (suffix === '' || suffix === 'maj7' || suffix === '7') {
+      const newRoot = KEYS[(rootIdx + 9) % 12]; // -3 mod 12 = +9
+      return suffix === 'maj7' ? newRoot + 'm7' : newRoot + 'm';
+    }
+    return null;
+  }
+
+  // Transpose a chord by semitones
+  function transposeChord(chordName, semitones) {
+    const root = chordName.replace(/(m7b5|maj7|m7|dim|aug|7|m|sus2|sus4|add9)$/, '');
+    const suffix = chordName.slice(root.length);
+    const rootIdx = KEYS.indexOf(root);
+    if (rootIdx < 0) return chordName;
+    const newRoot = KEYS[(rootIdx + semitones + 12) % 12];
+    return newRoot + suffix;
+  }
+
   return {
     KEYS,
     KEYS_FLAT,
@@ -339,6 +432,7 @@ const Theory = (() => {
     displayChord,
     internalNote,
     MODES,
+    MODE_INTERVALS,
     getScaleNotes,
     getDiatonicChords,
     suggestNextChords,
@@ -346,5 +440,11 @@ const Theory = (() => {
     getChordNotes,
     detectChordFromPositions,
     detectKeyFromChords,
+    classifyChordFunction,
+    detectProgressionPattern,
+    getParallelChords,
+    getTritoneSubstitution,
+    getRelativeSwap,
+    transposeChord,
   };
 })();

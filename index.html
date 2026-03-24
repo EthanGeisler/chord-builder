@@ -132,10 +132,38 @@
         <h3>Suggested Next</h3>
         <div id="suggestion-list"></div>
       </div>
-      <div id="section-theory" style="display:none;">
-        <h3>Music Theory</h3>
-        <div id="theory-numerals"></div>
-        <div id="theory-circle"></div>
+      <div id="theory-panel" class="theory-panel collapsed">
+        <button id="btn-toggle-theory" class="theory-toggle-btn">
+          Theory Analysis &#9662;
+        </button>
+        <div class="theory-panel-content">
+          <div class="theory-scope-tabs">
+            <button class="theory-tab active" data-scope="section">This Section</button>
+            <button class="theory-tab" data-scope="song">Full Song</button>
+          </div>
+          <div id="theory-section-view" class="theory-view">
+            <div class="theory-section-label"></div>
+            <div id="theory-function-timeline"></div>
+            <div id="theory-numerals"></div>
+            <div id="theory-circle"></div>
+          </div>
+          <div id="theory-song-view" class="theory-view" style="display:none;">
+            <div id="theory-song-summary"></div>
+            <div id="theory-song-circle"></div>
+          </div>
+          <div id="theory-suggestions">
+            <h4>Suggestions</h4>
+            <div class="suggestion-type-tabs">
+              <button class="sug-tab active" data-type="all">All</button>
+              <button class="sug-tab" data-type="new-section">Sections</button>
+              <button class="sug-tab" data-type="substitution">Subs</button>
+              <button class="sug-tab" data-type="passing-chord">Passing</button>
+              <button class="sug-tab" data-type="turnaround">Turnarounds</button>
+              <button class="sug-tab" data-type="modulation">Modulation</button>
+            </div>
+            <div id="theory-suggestion-list"></div>
+          </div>
+        </div>
       </div>
     </aside>
   </main>
@@ -155,6 +183,7 @@
   <script src="js/chord-creator.js"></script>
   <script src="js/timeline.js?v=5"></script>
   <script src="js/controls.js"></script>
+  <script src="js/theory-panel.js"></script>
   <script src="js/history.js"></script>
   <script src="js/audio.js?v=2"></script>
   <script src="js/midi-export.js"></script>

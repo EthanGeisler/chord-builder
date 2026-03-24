@@ -195,6 +195,7 @@ const Storage = (() => {
 
   // Initialize all modules
   Controls.init();
+  TheoryPanel.init();
   Templates.init();
   Timeline.init();
   AudioEngine.init();

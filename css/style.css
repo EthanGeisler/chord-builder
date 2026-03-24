@@ -970,22 +970,103 @@ button:active { transform: scale(0.97); }
   max-width: 220px;
 }
 
-#section-theory h3 {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+/* === Theory Analysis Panel === */
+.theory-panel {
   margin-top: 16px;
-  padding-top: 12px;
   border-top: 1px solid var(--border);
+  padding-top: 8px;
 }
 
+.theory-toggle-btn {
+  width: 100%;
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.theory-toggle-btn:hover {
+  background: var(--bg-card-hover);
+}
+
+.theory-panel.collapsed .theory-panel-content {
+  display: none;
+}
+
+.theory-panel-content {
+  margin-top: 8px;
+}
+
+.theory-scope-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.theory-tab {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.theory-tab.active {
+  background: var(--highlight);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.theory-section-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* Function Timeline */
+.func-timeline-bar {
+  display: flex;
+  height: 28px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+
+.func-timeline-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 24px;
+  border-right: 1px solid rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  border: 1px solid transparent;
+}
+
+.func-timeline-block:last-child {
+  border-right: none;
+}
+
+/* Roman Numerals */
 .theory-numeral-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .theory-numeral-item {
@@ -994,14 +1075,10 @@ button:active { transform: scale(0.97); }
   align-items: center;
   padding: 4px 8px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius);
   min-width: 40px;
-}
-
-.theory-numeral-item.non-diatonic {
-  border-color: var(--accent);
-  border-style: dashed;
+  transition: border-color 0.15s;
 }
 
 .theory-numeral-item.suggested {
@@ -1021,13 +1098,170 @@ button:active { transform: scale(0.97); }
   margin-top: 1px;
 }
 
-#theory-circle {
-  display: flex;
-  justify-content: center;
+.theory-pattern-label {
+  font-size: 0.75rem;
+  color: #2a9d8f;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding: 3px 8px;
+  background: rgba(42,157,143,0.1);
+  border-radius: var(--radius);
+  display: inline-block;
 }
 
-#theory-circle svg {
+/* Circle of Fifths */
+#theory-circle, #theory-song-circle {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+#theory-circle svg, #theory-song-circle svg {
   max-width: 100%;
+}
+
+/* Song view */
+.theory-song-arc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.theory-song-pattern {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.theory-empty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Suggestions */
+#theory-suggestions {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+#theory-suggestions h4 {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.suggestion-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.sug-tab {
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sug-tab.active {
+  background: var(--highlight);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.theory-suggestion-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  transition: border-color 0.15s;
+}
+
+.theory-suggestion-card:hover {
+  border-color: var(--accent);
+}
+
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.suggestion-type-badge {
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.suggestion-type-badge[data-type="new-section"] { background: #2a9d8f30; color: #2a9d8f; }
+.suggestion-type-badge[data-type="modulation"] { background: #7b2cbf30; color: #b07de8; }
+.suggestion-type-badge[data-type="substitution"] { background: rgba(233,69,96,0.2); color: var(--accent-light); }
+.suggestion-type-badge[data-type="passing-chord"] { background: #e9c46a30; color: #e9c46a; }
+.suggestion-type-badge[data-type="turnaround"] { background: #4ecca330; color: #4ecca3; }
+.suggestion-type-badge[data-type="approach-chord"] { background: #55555530; color: #aaa; }
+
+.suggestion-label {
+  font-size: 0.75rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.suggestion-detail {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.suggestion-chords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.suggestion-chord-chip {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.suggestion-apply-btn {
+  padding: 3px 12px;
+  font-size: 0.7rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.suggestion-apply-btn:hover {
+  background: var(--accent-light);
 }
 
 #detail-voicings h3, #detail-suggestions h3 {
