@@ -16,19 +16,24 @@
         <select id="key-select"></select>
       </div>
       <div class="control-group">
-        <label for="mode-select">Mode</label>
-        <select id="mode-select"></select>
-      </div>
-      <div class="control-group">
         <label for="capo-select">Capo</label>
         <select id="capo-select"></select>
       </div>
-      <div class="control-group">
-        <label for="enharmonic-toggle">♭/♯</label>
-        <select id="enharmonic-toggle">
-          <option value="sharp">Sharps (C#, F#)</option>
-          <option value="flat">Flats (Db, Gb)</option>
-        </select>
+      <div class="view-dropdown">
+        <button id="btn-view-menu">View ▾</button>
+        <div class="view-dropdown-content">
+          <div class="dropdown-row">
+            <label for="enharmonic-toggle">Note Display</label>
+            <select id="enharmonic-toggle">
+              <option value="sharp">Sharps (C#, F#)</option>
+              <option value="flat">Flats (Db, Gb)</option>
+            </select>
+          </div>
+          <div class="dropdown-row">
+            <label for="mode-select">Mode</label>
+            <select id="mode-select"></select>
+          </div>
+        </div>
       </div>
       <div class="control-group">
         <label for="instrument-select">Sound</label>
@@ -69,13 +74,18 @@
       <button id="btn-new">New</button>
       <button id="btn-save-as">Save As</button>
       <select id="load-select"><option value="">Load...</option></select>
-      <button id="btn-export">Export</button>
       <button id="btn-import">Import</button>
       <input type="file" id="import-file" accept=".json" style="display:none">
       <button id="btn-import-tab" class="btn-import-tab">Import Tab</button>
-      <button id="btn-export-midi">MIDI</button>
-      <button id="btn-export-wav">WAV</button>
-      <button id="btn-share">Share</button>
+      <div class="share-dropdown">
+        <button id="btn-share-menu">Share ▾</button>
+        <div class="share-dropdown-content">
+          <button id="btn-share">Share URL</button>
+          <button id="btn-export">Export JSON</button>
+          <button id="btn-export-midi">Export MIDI</button>
+          <button id="btn-export-wav">Export WAV</button>
+        </div>
+      </div>
     </div>
   </header>
 

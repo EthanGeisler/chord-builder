@@ -14,6 +14,7 @@ const Controls = (() => {
     setupBPM();
     setupTimeSig();
     setupMobileTabs();
+    setupShareDropdown();
     renderPalette();
 
     App.on('stateLoaded', () => {
@@ -488,6 +489,44 @@ const Controls = (() => {
     });
 
     paletteContainer.insertBefore(sugGroup, paletteContainer.firstChild);
+  }
+
+  function setupDropdown(containerSel, btnId) {
+    const dropdown = document.querySelector(containerSel);
+    const menuBtn = document.getElementById(btnId);
+    if (!dropdown || !menuBtn) return;
+
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close other dropdowns first
+      document.querySelectorAll('.view-dropdown, .share-dropdown').forEach(d => {
+        if (d !== dropdown) d.classList.remove('open');
+      });
+      dropdown.classList.toggle('open');
+    });
+
+    const content = dropdown.querySelector('.view-dropdown-content, .share-dropdown-content');
+    if (content) {
+      content.addEventListener('click', (e) => {
+        if (dropdown.classList.contains('share-dropdown')) {
+          dropdown.classList.remove('open');
+        }
+        // Stop view dropdown clicks from reaching document close handler
+        e.stopPropagation();
+      });
+    }
+  }
+
+  function setupShareDropdown() {
+    setupDropdown('.share-dropdown', 'btn-share-menu');
+    setupDropdown('.view-dropdown', 'btn-view-menu');
+
+    // Close all dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.view-dropdown, .share-dropdown').forEach(d => {
+        d.classList.remove('open');
+      });
+    });
   }
 
   function setupMobileTabs() {

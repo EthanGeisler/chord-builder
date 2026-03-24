@@ -59,6 +59,85 @@ html, body {
   gap: 10px;
 }
 
+.view-dropdown,
+.share-dropdown {
+  position: relative;
+}
+
+.view-dropdown-content {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-width: 200px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.view-dropdown.open .view-dropdown-content {
+  display: block;
+}
+
+.dropdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.dropdown-row label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dropdown-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.share-dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 140px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.share-dropdown-content button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.share-dropdown-content button:hover {
+  background: var(--bg-hover, rgba(255,255,255,0.08));
+}
+
+.share-dropdown.open .share-dropdown-content {
+  display: block;
+}
+
 .control-group {
   display: flex;
   align-items: center;
