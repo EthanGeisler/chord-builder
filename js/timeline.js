@@ -118,11 +118,19 @@ const Timeline = (() => {
     applyZoom();
 
     // Ctrl+scroll to zoom
-    document.getElementById('song-timeline').addEventListener('wheel', (e) => {
-      if (!e.ctrlKey) return;
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-      setZoom(COL_WIDTH_PX + delta);
+    const timelineEl = document.getElementById('song-timeline');
+    timelineEl.addEventListener('wheel', (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+        setZoom(COL_WIDTH_PX + delta);
+        return;
+      }
+      // Ensure vertical scroll always reaches the timeline panel
+      // even when mouse is over absolutely-positioned elements
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        timelineEl.scrollTop += e.deltaY;
+      }
     }, { passive: false });
 
     // Respond to orientation / breakpoint changes
@@ -134,6 +142,13 @@ const Timeline = (() => {
       }
       applyZoom();
       render();
+    });
+
+    // Re-render on window resize so wrapping recalculates
+    let _resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(_resizeTimer);
+      _resizeTimer = setTimeout(render, 150);
     });
 
     App.on('stateLoaded', render);
@@ -250,12 +265,21 @@ const Timeline = (() => {
   }
 
   function render() {
+    // Preserve scroll positions across DOM rebuild
+    const timelineEl = document.getElementById('song-timeline');
+    const savedTlScroll = timelineEl ? timelineEl.scrollTop : 0;
+    const savedWinScroll = window.scrollY;
+
     const el = container();
     el.innerHTML = '';
 
     App.state.sections.forEach((section, sIdx) => {
       el.appendChild(createSectionElement(section, sIdx));
     });
+
+    // Restore scroll after DOM is rebuilt
+    if (timelineEl) timelineEl.scrollTop = savedTlScroll;
+    window.scrollTo(window.scrollX, savedWinScroll);
   }
 
   // =============================================
@@ -266,10 +290,8 @@ const Timeline = (() => {
     div.className = 'timeline-section';
     div.dataset.sectionIndex = sIdx;
 
-    // Grid width for inner elements (scroll-inner gets explicit width, section itself flexes)
-    const totalCols = section.totalBeats * section.subdivisions;
-    const gridWidth = totalCols * COL_WIDTH_PX;
-    div.style.minWidth = 'min(' + (gridWidth + 44 + 4) + 'px, 100%)';
+    // Section width: constrained to container (wrapping handles overflow)
+    div.style.minWidth = '100%';
 
     div.appendChild(createSectionHeader(section, sIdx));
     div.appendChild(createSectionBody(section, sIdx));
@@ -394,55 +416,63 @@ const Timeline = (() => {
   }
 
   // =============================================
-  // Section body: chord row + step grid
+  // Section body: chord row + step grid (with wrapping)
   // =============================================
-  function createSectionBody(section, sIdx) {
-    const totalCols = section.totalBeats * section.subdivisions;
-    const gridWidth = totalCols * COL_WIDTH_PX;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'section-scroll-wrapper';
-
-    const inner = document.createElement('div');
-    inner.className = 'section-scroll-inner';
-    inner.style.minWidth = '100%';
-
-    // Row labels (fixed on left)
+  // Helper: create row labels column for a segment
+  function _createRowLabels() {
     const labelsDiv = document.createElement('div');
     labelsDiv.className = 'grid-row-labels';
-    // Empty label for chord row
     const chordLabel = document.createElement('div');
     chordLabel.className = 'grid-label chord-row-label';
     chordLabel.textContent = 'Chords';
     labelsDiv.appendChild(chordLabel);
-    // Empty label for beat header
     const beatLabel = document.createElement('div');
     beatLabel.className = 'grid-label beat-header-label';
     labelsDiv.appendChild(beatLabel);
-    // String row labels
     Tablature.GRID_ROWS.forEach(row => {
       const label = document.createElement('div');
       label.className = 'grid-label' + (row.type === 'special' ? ' grid-label-special' : '');
       label.textContent = row.label;
       labelsDiv.appendChild(label);
     });
+    return labelsDiv;
+  }
 
-    // Scrollable area
-    const scrollArea = document.createElement('div');
-    scrollArea.className = 'section-scroll-area';
-
-    // === Chord row ===
+  // Helper: create chord row for a column segment
+  function _createChordRowSegment(section, sIdx, colStart, colEnd, segmentWidth) {
     const chordRow = document.createElement('div');
     chordRow.className = 'chord-row';
-    chordRow.style.width = gridWidth + 'px';
-    chordRow.style.height = '52px';
+    chordRow.style.width = segmentWidth + 'px';
+    chordRow.dataset.colStart = colStart;
 
-    // Render chord blocks
+    // Render chord blocks that overlap this segment
     section.chords.forEach((chord, cIdx) => {
-      chordRow.appendChild(createChordBlock(chord, section, sIdx, cIdx));
+      const chordColStart = chord.startBeat * section.subdivisions;
+      const chordColEnd = (chord.startBeat + chord.durationBeats) * section.subdivisions;
+      // Does this chord overlap [colStart, colEnd)?
+      if (chordColEnd <= colStart || chordColStart >= colEnd) return;
+
+      const clippedStart = Math.max(chordColStart, colStart);
+      const clippedEnd = Math.min(chordColEnd, colEnd);
+      const block = createChordBlock(chord, section, sIdx, cIdx);
+      // Position relative to segment start
+      block.style.left = ((clippedStart - colStart) * COL_WIDTH_PX) + 'px';
+      block.style.width = ((clippedEnd - clippedStart) * COL_WIDTH_PX) + 'px';
+      // Mark if clipped so we can style differently
+      if (clippedStart > chordColStart) block.classList.add('chord-block-clipped-left');
+      if (clippedEnd < chordColEnd) block.classList.add('chord-block-clipped-right');
+      chordRow.appendChild(block);
     });
 
-    // Drop target for chord row
+    // Helper to compute absolute col from click position in this chord row
+    function _absColFromEvent(e) {
+      const rect = chordRow.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      return colStart + Math.floor(x / COL_WIDTH_PX);
+    }
+
+    // Drop target
     chordRow.addEventListener('dragover', (e) => {
       e.preventDefault();
       chordRow.classList.add('chord-row-dragover');
@@ -456,10 +486,7 @@ const Timeline = (() => {
       const chordName = e.dataTransfer.getData('text/plain');
       if (!chordName) return;
 
-      // Calculate startBeat from drop position
-      const rect = chordRow.getBoundingClientRect();
-      const x = e.clientX - rect.left + scrollArea.scrollLeft;
-      const col = Math.floor(x / COL_WIDTH_PX);
+      const col = _absColFromEvent(e);
       const startBeat = Math.floor(col / section.subdivisions);
       const beatsPerMeasure = App.getBeatsPerMeasure();
       const nextChord = section.chords.filter(c => c.startBeat > startBeat).sort((a, b) => a.startBeat - b.startBeat)[0];
@@ -467,35 +494,25 @@ const Timeline = (() => {
       const durationBeats = Math.min(beatsPerMeasure, section.totalBeats - startBeat, maxBeforeNext);
 
       if (durationBeats <= 0) return;
-
-      // Check overlap
       if (hasOverlap(section.chords, startBeat, durationBeats, -1)) return;
 
-      section.chords.push({
-        chord: chordName,
-        voicingIndex: 0,
-        startBeat,
-        durationBeats,
-      });
-      // Sort by startBeat
+      section.chords.push({ chord: chordName, voicingIndex: 0, startBeat, durationBeats });
       section.chords.sort((a, b) => a.startBeat - b.startBeat);
       render();
       App.emit('songChanged');
       App.emit('chordPlaced', { sIdx, chord: chordName });
     });
 
-    // Right-click empty chord row space for paste
+    // Right-click empty chord row space
     chordRow.addEventListener('contextmenu', (e) => {
       if (e.target.closest('.chord-block')) return;
       e.preventDefault();
-      const rect = chordRow.getBoundingClientRect();
-      const x = e.clientX - rect.left + (scrollArea ? scrollArea.scrollLeft : 0);
-      const col = Math.floor(x / COL_WIDTH_PX);
+      const col = _absColFromEvent(e);
       const startBeat = Math.floor(col / section.subdivisions);
       showChordRowContextMenu(e.clientX, e.clientY, sIdx, startBeat);
     });
 
-    // Mobile tap-to-place: show hint if chord is selected, click to place
+    // Mobile tap-to-place
     if (_isMobile() && typeof Controls !== 'undefined' && Controls.getTouchSelectedChord()) {
       chordRow.classList.add('touch-place-target');
     }
@@ -506,9 +523,7 @@ const Timeline = (() => {
       const chordName = Controls.getTouchSelectedChord();
       if (!chordName) return;
 
-      const rect = chordRow.getBoundingClientRect();
-      const x = (e.clientX || (e.touches && e.touches[0].clientX) || 0) - rect.left + (scrollArea ? scrollArea.scrollLeft : 0);
-      const col = Math.floor(x / COL_WIDTH_PX);
+      const col = _absColFromEvent(e);
       const startBeat = Math.floor(col / section.subdivisions);
       const beatsPerMeasure = App.getBeatsPerMeasure();
       const nextChord = section.chords.filter(c => c.startBeat > startBeat).sort((a, b) => a.startBeat - b.startBeat)[0];
@@ -526,48 +541,51 @@ const Timeline = (() => {
       App.emit('chordPlaced', { sIdx, chord: chordName });
     });
 
-    scrollArea.appendChild(chordRow);
+    return chordRow;
+  }
 
-    // === Beat header row ===
+  // Helper: create beat header for a column segment
+  function _createBeatHeaderSegment(section, colStart, colEnd, segmentWidth) {
     const beatHeader = document.createElement('div');
     beatHeader.className = 'beat-header-row';
-    beatHeader.style.width = gridWidth + 'px';
+    beatHeader.style.width = segmentWidth + 'px';
 
-    for (let col = 0; col < totalCols; col++) {
+    const beatsPerMeasure = App.getBeatsPerMeasure();
+    const stepsPerMeasure = beatsPerMeasure * section.subdivisions;
+
+    for (let col = colStart; col < colEnd; col++) {
       const cell = document.createElement('div');
       cell.className = 'beat-header-cell';
       cell.style.width = COL_WIDTH_PX + 'px';
-      const beatsPerMeasure = App.getBeatsPerMeasure();
-      const stepsPerMeasure = beatsPerMeasure * section.subdivisions;
       const colInMeasure = col % stepsPerMeasure;
       const label = Tablature.getBeatLabel(colInMeasure, stepsPerMeasure, App.state.timeSignature);
       cell.textContent = label;
 
       const stepsPerBeat = section.subdivisions;
       if (col % stepsPerBeat === 0) cell.classList.add('beat-downbeat');
-
-      // Chord boundary accent
       if (isChordBoundary(section, col)) cell.classList.add('beat-chord-boundary');
 
       beatHeader.appendChild(cell);
     }
-    scrollArea.appendChild(beatHeader);
+    return beatHeader;
+  }
 
-    // === Step grid ===
+  // Helper: create step grid for a column segment
+  function _createStepGridSegment(section, sIdx, colStart, colEnd, segmentWidth) {
     const gridEl = document.createElement('div');
     gridEl.className = 'step-grid';
-    gridEl.style.width = gridWidth + 'px';
+    gridEl.style.width = segmentWidth + 'px';
 
     Tablature.GRID_ROWS.forEach((row, rowIdx) => {
       const rowEl = document.createElement('div');
       rowEl.className = 'step-grid-row' + (row.type === 'special' ? ' step-grid-special-row' : '');
 
-      for (let col = 0; col < totalCols; col++) {
+      for (let col = colStart; col < colEnd; col++) {
         const cell = document.createElement('div');
         cell.className = 'step-grid-cell';
         cell.style.width = COL_WIDTH_PX + 'px';
         cell.dataset.rowIdx = rowIdx;
-        cell.dataset.col = col;
+        cell.dataset.col = col;  // ABSOLUTE column number
         cell.dataset.rowId = row.id;
         cell.dataset.sIdx = sIdx;
 
@@ -585,7 +603,6 @@ const Timeline = (() => {
           else cell.classList.add('vel-low');
         }
 
-        // Show selection highlight
         if (selectState.sIdx === sIdx && selectState.cells.has(key)) {
           cell.classList.add('step-selected');
         }
@@ -603,15 +620,13 @@ const Timeline = (() => {
           updateMarqueeVisual(sIdx, section);
         });
 
-        // Right-click: context menu for selected cells or paste, or remove single cell
+        // Right-click
         cell.addEventListener('contextmenu', (e) => {
           e.preventDefault();
-          // Show grid context menu if cells are selected in this section OR clipboard has data to paste
           if ((selectState.cells.size > 0 && selectState.sIdx === sIdx) || gridClipboard) {
             showGridContextMenu(e, sIdx, section);
             return;
           }
-          // Single cell: just remove
           if (section.gridState[key]) {
             delete section.gridState[key];
             clearSelection();
@@ -620,7 +635,7 @@ const Timeline = (() => {
           }
         });
 
-        // Touch: tap to toggle, long-press to start selection, touchmove to extend
+        // Touch events
         cell.addEventListener('touchstart', (e) => {
           if (!_isMobile()) return;
           const touch = e.touches[0];
@@ -628,7 +643,6 @@ const Timeline = (() => {
           _touchSelecting = false;
 
           _touchLongPressTimer = setTimeout(() => {
-            // Long-press: enter selection mode
             _touchSelecting = true;
             cell.classList.add('touch-selecting');
             selectState = {
@@ -643,7 +657,6 @@ const Timeline = (() => {
 
         cell.addEventListener('touchmove', (e) => {
           if (!_touchStartCell) return;
-          // Cancel long-press if finger moved too far (allow scrolling)
           const touch = e.touches[0];
           const dx = Math.abs(touch.clientX - _touchStartCell.x);
           const dy = Math.abs(touch.clientY - _touchStartCell.y);
@@ -654,7 +667,6 @@ const Timeline = (() => {
           }
           if (_touchSelecting) {
             e.preventDefault();
-            // Extend selection to cell under touch
             const el = document.elementFromPoint(touch.clientX, touch.clientY);
             if (el && el.classList.contains('step-grid-cell')) {
               const r = parseInt(el.dataset.rowIdx, 10);
@@ -674,18 +686,15 @@ const Timeline = (() => {
           clearTimeout(_touchLongPressTimer);
           if (!_touchStartCell) return;
           if (_touchSelecting) {
-            // Finalize selection
             _touchSelecting = false;
             selectState.active = false;
             _touchStartCell = null;
             return;
           }
-          // Simple tap: toggle cell
           const tc = _touchStartCell;
           _touchStartCell = null;
           e.preventDefault();
 
-          // Strum row toggle (same as mousedown single-click logic)
           if (tc.row.id === 'alt-bass') {
             const rows = Tablature.GRID_ROWS;
             const stringRows = rows.filter(r => r.type === 'string');
@@ -713,43 +722,153 @@ const Timeline = (() => {
 
       gridEl.appendChild(rowEl);
     });
-    scrollArea.appendChild(gridEl);
+    return gridEl;
+  }
 
-    // Playhead lines — smooth (continuous) + step (per-column)
-    const playheadSmooth = document.createElement('div');
-    playheadSmooth.className = 'playhead-line playhead-smooth';
-    playheadSmooth.style.display = 'none';
-    playheadSmooth.dataset.sectionIndex = sIdx;
-    scrollArea.appendChild(playheadSmooth);
+  function createSectionBody(section, sIdx) {
+    const totalCols = section.totalBeats * section.subdivisions;
+    const gridWidth = totalCols * COL_WIDTH_PX;
+    const ROW_LABELS_WIDTH = 44;
 
-    const playhead = document.createElement('div');
-    playhead.className = 'playhead-line playhead-step';
-    playhead.style.display = 'none';
-    playhead.dataset.sectionIndex = sIdx;
-    scrollArea.appendChild(playhead);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'section-scroll-wrapper';
 
-    // Endpoint handle — visually distinct draggable bar at grid boundary
-    const sectionHandle = document.createElement('div');
-    sectionHandle.className = 'section-endpoint-handle';
-    sectionHandle.style.left = gridWidth + 'px';
-    sectionHandle.title = 'Drag to resize section';
-    sectionHandle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      sectionResizeState = {
-        sIdx,
-        section,
-        startX: e.clientX,
-        origTotalBeats: section.totalBeats,
-        scrollArea,
-      };
-      sectionHandle.classList.add('dragging');
-    });
-    scrollArea.appendChild(sectionHandle);
+    // Determine if wrapping is needed
+    // Use the timeline panel width as reference (wrapper isn't in DOM yet)
+    const timelinePanel = document.getElementById('song-timeline');
+    const availableWidth = timelinePanel ? (timelinePanel.clientWidth - 32) : 9999; // 32 for padding
+    const contentWidth = gridWidth + ROW_LABELS_WIDTH + 4;
+    const colsFit = Math.floor((availableWidth - ROW_LABELS_WIDTH) / COL_WIDTH_PX);
+    const needsWrapping = contentWidth > availableWidth && colsFit > 0 && colsFit < totalCols;
 
-    inner.appendChild(labelsDiv);
-    inner.appendChild(scrollArea);
-    wrapper.appendChild(inner);
+    if (!needsWrapping) {
+      // Original single-row layout with horizontal scroll
+      wrapper.classList.add('section-scroll-no-wrap');
+
+      const inner = document.createElement('div');
+      inner.className = 'section-scroll-inner';
+      inner.style.minWidth = '100%';
+
+      const labelsDiv = _createRowLabels();
+      const scrollArea = document.createElement('div');
+      scrollArea.className = 'section-scroll-area';
+
+      scrollArea.appendChild(_createChordRowSegment(section, sIdx, 0, totalCols, gridWidth));
+      scrollArea.appendChild(_createBeatHeaderSegment(section, 0, totalCols, gridWidth));
+      scrollArea.appendChild(_createStepGridSegment(section, sIdx, 0, totalCols, gridWidth));
+
+      // Playheads
+      const playheadSmooth = document.createElement('div');
+      playheadSmooth.className = 'playhead-line playhead-smooth';
+      playheadSmooth.style.display = 'none';
+      playheadSmooth.dataset.sectionIndex = sIdx;
+      playheadSmooth.dataset.segColStart = '0';
+      scrollArea.appendChild(playheadSmooth);
+
+      const playhead = document.createElement('div');
+      playhead.className = 'playhead-line playhead-step';
+      playhead.style.display = 'none';
+      playhead.dataset.sectionIndex = sIdx;
+      playhead.dataset.segColStart = '0';
+      scrollArea.appendChild(playhead);
+
+      // Endpoint handle
+      const sectionHandle = document.createElement('div');
+      sectionHandle.className = 'section-endpoint-handle';
+      sectionHandle.style.left = gridWidth + 'px';
+      sectionHandle.title = 'Drag to resize section';
+      sectionHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sectionResizeState = {
+          sIdx, section,
+          startX: e.clientX,
+          origTotalBeats: section.totalBeats,
+        };
+        sectionHandle.classList.add('dragging');
+      });
+      scrollArea.appendChild(sectionHandle);
+
+      inner.appendChild(labelsDiv);
+      inner.appendChild(scrollArea);
+      wrapper.appendChild(inner);
+      return wrapper;
+    }
+
+    // === Wrapped layout: split into segments ===
+    wrapper.classList.add('section-scroll-wrapped');
+
+    // Snap colsPerRow to beat boundary for cleaner wrapping
+    let colsPerRow = colsFit;
+    const stepsPerBeat = section.subdivisions;
+    colsPerRow = Math.floor(colsPerRow / stepsPerBeat) * stepsPerBeat;
+    if (colsPerRow < stepsPerBeat) colsPerRow = stepsPerBeat;
+
+    const numSegments = Math.ceil(totalCols / colsPerRow);
+
+    for (let seg = 0; seg < numSegments; seg++) {
+      const colStart = seg * colsPerRow;
+      const colEnd = Math.min(colStart + colsPerRow, totalCols);
+      const segCols = colEnd - colStart;
+      const segWidth = segCols * COL_WIDTH_PX;
+
+      const group = document.createElement('div');
+      group.className = 'grid-row-group';
+      group.dataset.segIndex = seg;
+      group.dataset.colStart = colStart;
+      group.dataset.colEnd = colEnd;
+
+      // Row labels
+      group.appendChild(_createRowLabels());
+
+      // Content area
+      const content = document.createElement('div');
+      content.className = 'grid-row-group-content';
+
+      content.appendChild(_createChordRowSegment(section, sIdx, colStart, colEnd, segWidth));
+      content.appendChild(_createBeatHeaderSegment(section, colStart, colEnd, segWidth));
+      content.appendChild(_createStepGridSegment(section, sIdx, colStart, colEnd, segWidth));
+
+      // Playheads for this segment
+      const playheadSmooth = document.createElement('div');
+      playheadSmooth.className = 'playhead-line playhead-smooth';
+      playheadSmooth.style.display = 'none';
+      playheadSmooth.dataset.sectionIndex = sIdx;
+      playheadSmooth.dataset.segColStart = colStart;
+      playheadSmooth.dataset.segColEnd = colEnd;
+      content.appendChild(playheadSmooth);
+
+      const playhead = document.createElement('div');
+      playhead.className = 'playhead-line playhead-step';
+      playhead.style.display = 'none';
+      playhead.dataset.sectionIndex = sIdx;
+      playhead.dataset.segColStart = colStart;
+      playhead.dataset.segColEnd = colEnd;
+      content.appendChild(playhead);
+
+      // Endpoint handle only on last segment
+      if (seg === numSegments - 1) {
+        const sectionHandle = document.createElement('div');
+        sectionHandle.className = 'section-endpoint-handle';
+        sectionHandle.style.left = segWidth + 'px';
+        sectionHandle.title = 'Drag to resize section';
+        sectionHandle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          sectionResizeState = {
+            sIdx, section,
+            startX: e.clientX,
+            origTotalBeats: section.totalBeats,
+          };
+          sectionHandle.classList.add('dragging');
+        });
+        content.appendChild(sectionHandle);
+      }
+
+      group.appendChild(content);
+      wrapper.appendChild(group);
+    }
+
     return wrapper;
   }
 
@@ -908,11 +1027,15 @@ const Timeline = (() => {
   }
 
   function handleSectionResizeMove(e) {
-    const { section, startX, origTotalBeats, scrollArea } = sectionResizeState;
+    const { section, startX, origTotalBeats } = sectionResizeState;
     const dx = e.clientX - startX;
+
+    // Horizontal: each column of mouse movement = 1 beat delta
     const colDelta = Math.round(dx / COL_WIDTH_PX);
     const beatDelta = colDelta / section.subdivisions;
-    const bpm = App.getBeatsPerMeasure();
+
+    const beatsPerMeasure = App.getBeatsPerMeasure();
+    const bpm = beatsPerMeasure;
 
     // Snap to whole beats, minimum 1 measure
     let newBeats = origTotalBeats + beatDelta;
@@ -937,7 +1060,6 @@ const Timeline = (() => {
         if (col >= maxCol) delete section.gridState[key];
       }
 
-      // Full re-render so grid cells match
       render();
     }
   }
@@ -1005,16 +1127,25 @@ const Timeline = (() => {
   }
 
   function updateBlockVisual(chord, section) {
+    const sIdx = resizeState ? resizeState.sIdx : dragState.sIdx;
+    const cIdx = resizeState ? resizeState.cIdx : dragState.cIdx;
+    const sectionEl = container().querySelectorAll('.timeline-section')[sIdx];
+    if (!sectionEl) return;
+
+    const wrapper = sectionEl.querySelector('.section-scroll-wrapper');
+    if (wrapper && wrapper.classList.contains('section-scroll-wrapped')) {
+      // With wrapping, blocks are split across segments — full re-render needed
+      render();
+      return;
+    }
+
+    // Non-wrapped: update the block directly
     const leftPx = chord.startBeat * section.subdivisions * COL_WIDTH_PX;
     const widthPx = chord.durationBeats * section.subdivisions * COL_WIDTH_PX;
-    // Find the block by iterating (safer than style-matching)
-    const sectionEl = container().querySelectorAll('.timeline-section')[resizeState ? resizeState.sIdx : dragState.sIdx];
-    if (!sectionEl) return;
     const blocks = sectionEl.querySelectorAll('.chord-block');
-    const idx = resizeState ? resizeState.cIdx : dragState.cIdx;
-    if (blocks[idx]) {
-      blocks[idx].style.left = leftPx + 'px';
-      blocks[idx].style.width = widthPx + 'px';
+    if (blocks[cIdx]) {
+      blocks[cIdx].style.left = leftPx + 'px';
+      blocks[cIdx].style.width = widthPx + 'px';
     }
   }
 
@@ -1395,10 +1526,12 @@ const Timeline = (() => {
       const section = App.state.sections[sIdx];
       if (!section) { exitPasteMode(); return; }
 
-      const scrollArea = chordRow.closest('.section-scroll-area');
       const rect = chordRow.getBoundingClientRect();
-      const x = e.clientX - rect.left + (scrollArea ? scrollArea.scrollLeft : 0);
-      const col = Math.floor(x / COL_WIDTH_PX);
+      const segColStart = parseInt(chordRow.dataset.colStart || '0', 10);
+      const scrollArea = chordRow.closest('.section-scroll-area');
+      const scrollLeft = scrollArea ? scrollArea.scrollLeft : 0;
+      const x = e.clientX - rect.left + scrollLeft;
+      const col = segColStart + Math.floor(x / COL_WIDTH_PX);
       const startBeat = Math.floor(col / section.subdivisions);
       const available = maxAvailableDuration(section.chords, startBeat, section.totalBeats - startBeat);
       const durationBeats = Math.min(clipboard.durationBeats, available);
@@ -1487,10 +1620,28 @@ const Timeline = (() => {
   function highlightChordBlock(sIdx, cIdx) {
     document.querySelectorAll('.chord-block').forEach(b => b.classList.remove('selected'));
     const sectionEl = container().querySelectorAll('.timeline-section')[sIdx];
-    if (sectionEl) {
-      const blocks = sectionEl.querySelectorAll('.chord-block');
-      if (blocks[cIdx]) blocks[cIdx].classList.add('selected');
-    }
+    if (!sectionEl) return;
+    // With wrapping, a chord may appear in multiple segments — highlight all instances
+    // Each chord block stores cIdx in its click handler closure, but we can match by data
+    const section = App.state.sections[sIdx];
+    if (!section || !section.chords[cIdx]) return;
+    const chord = section.chords[cIdx];
+    const chordColStart = chord.startBeat * section.subdivisions;
+    sectionEl.querySelectorAll('.chord-block').forEach(b => {
+      // Match by checking if the block's name matches and overlaps chord's column range
+      // Simplest: just highlight all blocks for this chord name at this position
+      const blockLeft = parseFloat(b.style.left);
+      const parent = b.closest('.chord-row');
+      if (!parent) return;
+      const parentColStart = parseInt(parent.dataset.colStart || '0', 10);
+      const absLeft = parentColStart * COL_WIDTH_PX + blockLeft;
+      const chordAbsLeft = chordColStart * COL_WIDTH_PX;
+      // Check if this block is part of the same chord (its absolute left overlaps the chord's range)
+      const chordAbsRight = (chord.startBeat + chord.durationBeats) * section.subdivisions * COL_WIDTH_PX;
+      if (absLeft >= chordAbsLeft && absLeft < chordAbsRight) {
+        b.classList.add('selected');
+      }
+    });
   }
 
   // =============================================
@@ -1695,35 +1846,50 @@ const Timeline = (() => {
     const sectionEl = container().querySelectorAll('.timeline-section')[sIdx];
     if (!sectionEl) return;
 
-    const stepHead = sectionEl.querySelector('.playhead-step');
-    const smoothHead = sectionEl.querySelector('.playhead-smooth');
+    // Find the correct playhead(s) for this column — may be in a segment
+    const allStepHeads = sectionEl.querySelectorAll('.playhead-step');
+    const allSmoothHeads = sectionEl.querySelectorAll('.playhead-smooth');
+    let stepHead = null;
+    let smoothHead = null;
+    let localCol = col;
+
+    for (let i = 0; i < allStepHeads.length; i++) {
+      const sh = allStepHeads[i];
+      const segStart = parseInt(sh.dataset.segColStart || '0', 10);
+      const segEnd = parseInt(sh.dataset.segColEnd || '999999', 10);
+      if (col >= segStart && col < segEnd) {
+        stepHead = sh;
+        smoothHead = allSmoothHeads[i] || null;
+        localCol = col - segStart;
+        break;
+      }
+    }
 
     if (stepHead) {
       stepHead.style.display = 'block';
-      stepHead.style.left = (col * COL_WIDTH_PX) + 'px';
+      stepHead.style.left = (localCol * COL_WIDTH_PX) + 'px';
     }
 
-    // Animate smooth playhead from current col to next col
+    // Animate smooth playhead
     if (smoothHead && colDurationMs) {
       smoothHead.style.display = 'block';
       _smoothPlayhead = smoothHead;
-      _smoothStartX = col * COL_WIDTH_PX;
-      _smoothEndX = (col + 1) * COL_WIDTH_PX;
+      _smoothStartX = localCol * COL_WIDTH_PX;
+      _smoothEndX = (localCol + 1) * COL_WIDTH_PX;
       _smoothStartTime = performance.now();
       _smoothDuration = colDurationMs;
       if (!_smoothRAF) _smoothRAF = requestAnimationFrame(_animateSmoothPlayhead);
     }
 
-    // Auto-scroll to center playhead horizontally
     const timelinePanel = document.getElementById('song-timeline');
     const scrollWrapper = sectionEl.querySelector('.section-scroll-wrapper');
 
-    // Smooth scroll every bar (4 beats)
-    const section = App.state.sections[sIdx];
-    const subdivisions = section ? section.subdivisions : 2;
-    const colsPerBar = 4 * subdivisions;
-    if (col % colsPerBar === 0) {
-      if (scrollWrapper) {
+    // For non-wrapped: horizontal auto-scroll
+    if (scrollWrapper && !scrollWrapper.classList.contains('section-scroll-wrapped')) {
+      const section = App.state.sections[sIdx];
+      const subdivisions = section ? section.subdivisions : 2;
+      const colsPerBar = 4 * subdivisions;
+      if (col % colsPerBar === 0) {
         const playheadLeft = col * COL_WIDTH_PX;
         const wrapperWidth = scrollWrapper.clientWidth;
         _scrollTarget = playheadLeft - (wrapperWidth / 2);
@@ -1732,7 +1898,7 @@ const Timeline = (() => {
       }
     }
 
-    // Smoothly keep section vertically visible in the timeline panel
+    // Smoothly keep playhead vertically visible in the timeline panel
     if (timelinePanel && stepHead) {
       const playheadRect = stepHead.getBoundingClientRect();
       const panelRect = timelinePanel.getBoundingClientRect();

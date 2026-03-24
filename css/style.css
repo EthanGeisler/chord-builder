@@ -598,10 +598,31 @@ button:active { transform: scale(0.97); }
   overflow-y: visible;
 }
 
+/* When wrapped, no horizontal scroll needed */
+.section-scroll-wrapper.section-scroll-wrapped {
+  overflow-x: hidden;
+}
+
 .section-scroll-inner {
   display: flex;
   width: fit-content;
   min-width: 100%;
+}
+
+/* === Grid Row Group (wrapped segments) === */
+.grid-row-group {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+}
+
+.grid-row-group:last-child {
+  border-bottom: none;
+}
+
+.grid-row-group-content {
+  flex: 1;
+  position: relative;
+  min-width: 0;
 }
 
 .grid-row-labels {
@@ -647,6 +668,19 @@ button:active { transform: scale(0.97); }
   position: relative;
   min-width: 0;
   width: fit-content;
+}
+
+/* Clipped chord blocks at segment boundaries */
+.chord-block.chord-block-clipped-left {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left-style: dashed;
+}
+
+.chord-block.chord-block-clipped-right {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right-style: dashed;
 }
 
 /* === Section Endpoint Handle === */
