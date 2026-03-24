@@ -1,7 +1,9 @@
 // === Chord Builder — Audio Playback Engine (Tone.js) ===
 
 const AudioEngine = (() => {
-  let synth = null;
+  let currentInstrument = null;
+  let instrumentReady = false;
+  let currentType = 'acoustic';
   let toneStarted = false;
 
   const DYNAMICS_VELOCITY = {
@@ -13,16 +15,41 @@ const AudioEngine = (() => {
     'ff': 1.0,
   };
 
+  const SAMPLE_BASE = 'https://nbrosowsky.github.io/tonejs-instruments/samples/';
+
+  const SAMPLE_URLS = {
+    'E2': 'E2.mp3', 'A2': 'A2.mp3', 'D3': 'D3.mp3',
+    'G3': 'G3.mp3', 'B3': 'B3.mp3', 'E4': 'E4.mp3',
+    'C3': 'C3.mp3', 'F3': 'F3.mp3', 'A3': 'A3.mp3',
+    'C4': 'C4.mp3', 'F4': 'F4.mp3', 'A4': 'A4.mp3',
+  };
+
+  const INSTRUMENT_PATHS = {
+    'acoustic': 'guitar-acoustic/',
+    'electric': 'guitar-electric/',
+    'nylon':    'guitar-nylon/',
+  };
+
   async function ensureToneStarted() {
     if (!toneStarted && typeof Tone !== 'undefined') {
       await Tone.start();
       toneStarted = true;
     }
+    if (!currentInstrument) loadInstrument(currentType);
   }
 
-  function getSynth() {
-    if (!synth && typeof Tone !== 'undefined') {
-      synth = new Tone.PolySynth(Tone.Synth, {
+  function loadInstrument(type) {
+    // Dispose old instrument
+    if (currentInstrument) {
+      currentInstrument.dispose();
+      currentInstrument = null;
+      instrumentReady = false;
+    }
+
+    currentType = type;
+
+    if (type === 'synth') {
+      currentInstrument = new Tone.PolySynth(Tone.Synth, {
         maxPolyphony: 12,
         voice: Tone.Synth,
         options: {
@@ -35,9 +62,32 @@ const AudioEngine = (() => {
           },
         },
       }).toDestination();
-      synth.volume.value = -6;
+      currentInstrument.volume.value = -6;
+      instrumentReady = true;
+      return;
     }
-    return synth;
+
+    // Sampler-based instruments
+    const path = INSTRUMENT_PATHS[type] || INSTRUMENT_PATHS['acoustic'];
+    currentInstrument = new Tone.Sampler({
+      urls: SAMPLE_URLS,
+      baseUrl: SAMPLE_BASE + path,
+      onload: () => {
+        instrumentReady = true;
+        console.log(`${type} guitar samples loaded`);
+      },
+      release: 1.5,
+    }).toDestination();
+    currentInstrument.volume.value = -3;
+  }
+
+  function setInstrument(type) {
+    if (type === currentType && currentInstrument) return;
+    loadInstrument(type);
+  }
+
+  function getSynth() {
+    return instrumentReady ? currentInstrument : null;
   }
 
   // Convert chord name to playable notes with octaves
@@ -240,7 +290,7 @@ const AudioEngine = (() => {
               const note = Tablature.stringToNote(stringNum, voicing, capo);
               if (note) {
                 s.triggerAttackRelease(note, '8n', now + strumOffset, velocity * cellVel);
-                strumOffset += 0.008; // slight stagger for natural sound
+                strumOffset += 0.008;
               }
             });
           });
@@ -276,9 +326,17 @@ const AudioEngine = (() => {
       App.state.loopSection = !App.state.loopSection;
       loopBtn.classList.toggle('active', App.state.loopSection);
     });
+
+    // Instrument selector
+    const instSel = document.getElementById('instrument-select');
+    if (instSel) {
+      instSel.addEventListener('change', () => {
+        setInstrument(instSel.value);
+      });
+    }
   }
 
-  return { init, playChord, play, pause, stop, findChordAtCol };
+  return { init, playChord, play, pause, stop, findChordAtCol, setInstrument };
 })();
 
 // Alias for use in controls.js

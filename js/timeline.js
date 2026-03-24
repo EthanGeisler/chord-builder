@@ -50,6 +50,9 @@ const Timeline = (() => {
   // Clipboard for chord copy/paste
   let clipboard = null; // { chord, voicingIndex, durationBeats, gridData: {"rowId:colOffset": vel} }
 
+  // Clipboard for grid cell (tab pattern) copy/paste
+  let gridClipboard = null; // { data: {"rowId:colOffset": vel}, rowSpan, colSpan }
+
   // Clipboard for section copy/paste
   let sectionClipboard = null; // deep-cloned section object
   let selectedSectionIdx = -1; // currently selected section index
@@ -423,8 +426,10 @@ const Timeline = (() => {
       const x = e.clientX - rect.left + scrollArea.scrollLeft;
       const col = Math.floor(x / COL_WIDTH_PX);
       const startBeat = Math.floor(col / section.subdivisions);
-      const bpm = App.getBeatsPerMeasure();
-      const durationBeats = Math.min(1, section.totalBeats - startBeat);
+      const beatsPerMeasure = App.getBeatsPerMeasure();
+      const nextChord = section.chords.filter(c => c.startBeat > startBeat).sort((a, b) => a.startBeat - b.startBeat)[0];
+      const maxBeforeNext = nextChord ? nextChord.startBeat - startBeat : Infinity;
+      const durationBeats = Math.min(beatsPerMeasure, section.totalBeats - startBeat, maxBeforeNext);
 
       if (durationBeats <= 0) return;
 
@@ -532,9 +537,15 @@ const Timeline = (() => {
           updateMarqueeVisual(sIdx, section);
         });
 
-        // Right-click: remove
+        // Right-click: context menu for selected cells, or remove single cell
         cell.addEventListener('contextmenu', (e) => {
           e.preventDefault();
+          // If cells are selected, show grid context menu
+          if (selectState.cells.size > 0 && selectState.sIdx === sIdx) {
+            showGridContextMenu(e, sIdx, section);
+            return;
+          }
+          // Single cell: just remove
           if (section.gridState[key]) {
             delete section.gridState[key];
             clearSelection();
@@ -906,22 +917,156 @@ const Timeline = (() => {
     };
   }
 
-  function handleSelectionKeydown(e) {
+  function copyGridSelection(sIdx, section) {
     if (selectState.cells.size === 0) return;
-    const section = App.state.sections[selectState.sIdx];
-    if (!section) return;
+    // Find bounds of selection
+    let minRow = Infinity, maxRow = -1, minCol = Infinity, maxCol = -1;
+    const rows = Tablature.GRID_ROWS;
+    for (const key of selectState.cells) {
+      const [rowId, colStr] = key.split(':');
+      const col = parseInt(colStr, 10);
+      const rowIdx = rows.findIndex(r => r.id === rowId);
+      if (rowIdx < minRow) minRow = rowIdx;
+      if (rowIdx > maxRow) maxRow = rowIdx;
+      if (col < minCol) minCol = col;
+      if (col > maxCol) maxCol = col;
+    }
+    // Store as offsets from top-left of selection
+    const data = {};
+    for (const key of selectState.cells) {
+      const [rowId, colStr] = key.split(':');
+      const col = parseInt(colStr, 10);
+      const rowIdx = rows.findIndex(r => r.id === rowId);
+      const vel = section.gridState[key];
+      if (vel) {
+        const offsetKey = (rowIdx - minRow) + ':' + (col - minCol);
+        data[offsetKey] = { vel, rowId };
+      }
+    }
+    gridClipboard = {
+      data,
+      rowSpan: maxRow - minRow + 1,
+      colSpan: maxCol - minCol + 1,
+    };
+    // Flash selected cells to confirm
+    document.querySelectorAll('.step-grid-cell.step-selected').forEach(c => {
+      c.style.outline = '2px solid var(--success)';
+      setTimeout(() => { c.style.outline = ''; }, 300);
+    });
+  }
+
+  function pasteGridAtClick(sIdx, section, e) {
+    if (!gridClipboard) return;
+    // Find the cell under the click
+    const cellEl = e.target.closest('.step-grid-cell');
+    if (!cellEl) return;
+    const targetRowIdx = parseInt(cellEl.dataset.rowIdx, 10);
+    const targetCol = parseInt(cellEl.dataset.col, 10);
+    const rows = Tablature.GRID_ROWS;
     const totalCols = section.totalBeats * section.subdivisions;
 
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      e.preventDefault();
+    for (const [offsetKey, entry] of Object.entries(gridClipboard.data)) {
+      const [rowOffset, colOffset] = offsetKey.split(':').map(Number);
+      const destRowIdx = targetRowIdx + rowOffset;
+      const destCol = targetCol + colOffset;
+      if (destRowIdx >= rows.length || destCol >= totalCols) continue;
+      const destKey = rows[destRowIdx].id + ':' + destCol;
+      section.gridState[destKey] = entry.vel;
+    }
+    clearSelection();
+    render();
+    App.emit('songChanged');
+  }
+
+  function showGridContextMenu(e, sIdx, section) {
+    document.querySelectorAll('.context-menu').forEach(m => m.remove());
+    const menu = document.createElement('div');
+    menu.className = 'context-menu';
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+
+    // Copy
+    const copyItem = document.createElement('div');
+    copyItem.className = 'context-menu-item';
+    copyItem.textContent = 'Copy Pattern';
+    copyItem.addEventListener('click', () => {
+      copyGridSelection(sIdx, section);
+      menu.remove();
+    });
+    menu.appendChild(copyItem);
+
+    // Paste
+    const pasteItem = document.createElement('div');
+    pasteItem.className = 'context-menu-item' + (!gridClipboard ? ' disabled' : '');
+    pasteItem.textContent = 'Paste Pattern';
+    pasteItem.addEventListener('click', () => {
+      if (!gridClipboard) { menu.remove(); return; }
+      pasteGridAtClick(sIdx, section, e);
+      menu.remove();
+    });
+    menu.appendChild(pasteItem);
+
+    // Delete
+    const deleteItem = document.createElement('div');
+    deleteItem.className = 'context-menu-item';
+    deleteItem.textContent = 'Delete';
+    deleteItem.addEventListener('click', () => {
       for (const key of selectState.cells) {
         delete section.gridState[key];
       }
       clearSelection();
       render();
       App.emit('songChanged');
+      menu.remove();
+    });
+    menu.appendChild(deleteItem);
+
+    document.body.appendChild(menu);
+  }
+
+  function handleSelectionKeydown(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Grid cells selected — delete them
+      if (selectState.cells.size > 0) {
+        e.preventDefault();
+        const section = App.state.sections[selectState.sIdx];
+        if (!section) return;
+        for (const key of selectState.cells) {
+          delete section.gridState[key];
+        }
+        clearSelection();
+        render();
+        App.emit('songChanged');
+        return;
+      }
+      // Chord selected — delete it
+      const slot = App.state.selectedSlot;
+      if (slot) {
+        e.preventDefault();
+        const section = App.state.sections[slot.sectionIndex];
+        if (section && section.chords[slot.chordIndex]) {
+          section.chords.splice(slot.chordIndex, 1);
+          App.state.selectedSlot = null;
+          render();
+          App.emit('songChanged');
+        }
+        return;
+      }
+      // Section selected — delete it (but keep at least one)
+      if (selectedSectionIdx >= 0 && App.state.sections.length > 1) {
+        e.preventDefault();
+        deleteSection(selectedSectionIdx);
+        return;
+      }
       return;
     }
+
+    if (selectState.cells.size === 0) return;
+    const section = App.state.sections[selectState.sIdx];
+    if (!section) return;
+    const totalCols = section.totalBeats * section.subdivisions;
 
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
@@ -969,8 +1114,14 @@ const Timeline = (() => {
 
     const ctrl = e.ctrlKey || e.metaKey;
 
-    // Ctrl+C: copy selected section or chord
+    // Ctrl+C: copy grid selection, section, or chord
     if (ctrl && e.key === 'c') {
+      // Grid cell selection takes priority
+      if (selectState.cells.size > 0 && selectState.sIdx >= 0) {
+        e.preventDefault();
+        copyGridSelection(selectState.sIdx, App.state.sections[selectState.sIdx]);
+        return;
+      }
       // Section copy takes priority if a section is selected
       if (selectedSectionIdx >= 0 && selectedSectionIdx < App.state.sections.length) {
         e.preventDefault();
@@ -1019,8 +1170,35 @@ const Timeline = (() => {
       return;
     }
 
-    // Ctrl+V: paste section or chord
+    // Ctrl+V: paste grid pattern, section, or chord
     if (ctrl && e.key === 'v') {
+      // Grid paste if grid clipboard has data and cells are selected (paste at selection anchor)
+      if (gridClipboard && selectState.cells.size > 0 && selectState.sIdx >= 0) {
+        e.preventDefault();
+        const section = App.state.sections[selectState.sIdx];
+        const rows = Tablature.GRID_ROWS;
+        const totalCols = section.totalBeats * section.subdivisions;
+        // Find top-left of current selection as paste target
+        let minRowIdx = Infinity, minCol = Infinity;
+        for (const key of selectState.cells) {
+          const [rowId, colStr] = key.split(':');
+          const col = parseInt(colStr, 10);
+          const rowIdx = rows.findIndex(r => r.id === rowId);
+          if (rowIdx < minRowIdx) minRowIdx = rowIdx;
+          if (col < minCol) minCol = col;
+        }
+        for (const [offsetKey, entry] of Object.entries(gridClipboard.data)) {
+          const [rowOffset, colOffset] = offsetKey.split(':').map(Number);
+          const destRowIdx = minRowIdx + rowOffset;
+          const destCol = minCol + colOffset;
+          if (destRowIdx >= rows.length || destCol >= totalCols) continue;
+          section.gridState[rows[destRowIdx].id + ':' + destCol] = entry.vel;
+        }
+        clearSelection();
+        render();
+        App.emit('songChanged');
+        return;
+      }
       // Section paste if section clipboard has data
       if (sectionClipboard && selectedSectionIdx >= 0) {
         e.preventDefault();

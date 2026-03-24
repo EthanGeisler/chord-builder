@@ -18,15 +18,14 @@ const ChordsDB = (() => {
   }
 
   // Look up voicings for a chord name
-  // Returns array of voicing objects, or empty array
-  function getVoicings(chordName, capo = 0) {
+  // Returns array of voicing objects (shapes are always relative to capo, not adjusted)
+  function getVoicings(chordName) {
     const custom = getCustomVoicingsFor(chordName);
 
     // Direct lookup
     let voicings = voicingsData[chordName];
     if (voicings && voicings.length > 0) {
-      const base = capo > 0 ? adjustForCapo(voicings, capo) : voicings;
-      return base.concat(custom);
+      return voicings.concat(custom);
     }
 
     // Try normalizing: Tonal uses different naming sometimes
@@ -34,16 +33,14 @@ const ChordsDB = (() => {
     for (const alias of aliases) {
       voicings = voicingsData[alias];
       if (voicings && voicings.length > 0) {
-        const base = capo > 0 ? adjustForCapo(voicings, capo) : voicings;
-        return base.concat(custom);
+        return voicings.concat(custom);
       }
     }
 
     // Generate barre chord from shape templates if no voicing found
     const generated = generateBarreVoicing(chordName);
     if (generated) {
-      const base = capo > 0 ? adjustForCapo([generated], capo) : [generated];
-      return base.concat(custom);
+      return [generated].concat(custom);
     }
 
     // Even with no DB/barre match, return any custom voicings
